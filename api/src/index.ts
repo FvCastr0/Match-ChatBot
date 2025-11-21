@@ -1,5 +1,7 @@
+import "dotenv/config";
 import express from "express";
-import whatsappWebhook from "./api/whatsapp-webhook.js";
+import whatsappWebhook from "./routes/whatsapp-routes.js";
+
 const port = process.env.PORT || 3000;
 
 const app = express();

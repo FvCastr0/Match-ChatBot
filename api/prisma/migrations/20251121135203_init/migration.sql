@@ -1,7 +1,8 @@
 -- CreateTable
 CREATE TABLE "Costumer" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "phone" INTEGER NOT NULL
+    "phone" INTEGER NOT NULL,
+    "lastMessage" DATETIME NOT NULL
 );
 
 -- CreateIndex
