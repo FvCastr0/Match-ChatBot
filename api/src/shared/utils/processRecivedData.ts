@@ -19,13 +19,20 @@ export function ProcessRecivedData(data: any): {
       } else return "";
     };
 
+    function hasName() {
+      if (value.contacts === undefined) {
+        return "";
+      } else {
+        if (value.contacts[0].profile.name === "") return "";
+        else return value.contacts[0].profile.name;
+      }
+    }
+
     const costumerId = data.entry[0].id;
     const costumerPhone = message.from;
     const costumerMessage = messageValue();
     const timeLastMsg = message.timestamp;
-    const customerName = value.contacts[0].profile.name
-      ? value.contacts[0].profile.name
-      : "";
+    const customerName = hasName();
 
     return {
       id: costumerId,
