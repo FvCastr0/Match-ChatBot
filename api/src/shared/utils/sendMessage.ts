@@ -1,20 +1,21 @@
 import axios, { AxiosError } from "axios";
+import "dotenv/config";
 
-const ACCESS_TOKEN = process.env.WHATSAPP_TOKEN;
+const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 
 const API_URL = `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`;
 
-export async function sendMessage() {
+export async function sendMessage(phone: number, template: string) {
   const payload = {
     messaging_product: "whatsapp",
     recipient_type: "individual",
-    to: "553291966510",
+    to: phone,
     type: "template",
     template: {
-      name: "hello_world",
+      name: template,
       language: {
-        code: "en_US"
+        code: "pt_BR"
       }
     }
   };
