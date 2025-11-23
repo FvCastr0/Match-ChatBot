@@ -7,6 +7,7 @@ import { CustomerService } from "../customer/customer.service";
 export class WhatsappController {
   private readonly VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
   constructor(private readonly customerService: CustomerService) {}
+
   @Get()
   verifyWebhook(
     @Query("hub.mode") mode: string,
@@ -15,7 +16,6 @@ export class WhatsappController {
     @Res() res: Response
   ) {
     if (mode === "subscribe" && token === this.VERIFY_TOKEN) {
-      console.log("Webhook verified!");
       return res.status(200).send(challenge);
     }
 
