@@ -1,12 +1,12 @@
 import { Body, Controller, Get, Post, Query, Res } from "@nestjs/common";
 import type { Response } from "express";
 import { ProcessRecivedData } from "src/shared/utils/processRecivedData";
-import { sendMessage } from "src/shared/utils/sendMessage";
 import { CustomerService } from "../customer/customer.service";
 
 @Controller("webhook")
 export class WhatsappController {
   private readonly VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
+  constructor(private readonly customerService: CustomerService) {}
   @Get()
   verifyWebhook(
     @Query("hub.mode") mode: string,
@@ -26,15 +26,14 @@ export class WhatsappController {
   async reciveMessage(@Body() body: any, @Res() res: Response) {
     const dataMsg = ProcessRecivedData(body);
     if (dataMsg === null) return res.send(404);
-    const hasCustomer = await new CustomerService().findCustomer(dataMsg.id);
+    const hasCustomer = await this.customerService.findCustomer(dataMsg.id);
 
     if (!hasCustomer) {
-      await new CustomerService().createCustomer(
+      await this.customerService.createCustomer(
         dataMsg.id,
         dataMsg.name,
         dataMsg.phone
       );
-      sendMessage(Number(dataMsg.phone), "business_redirect");
     }
     return res.sendStatus(200);
   }

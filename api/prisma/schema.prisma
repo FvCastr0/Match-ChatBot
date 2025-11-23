@@ -17,9 +17,8 @@ enum Steps {
 }
 
 model Business {
-  id           String  @id @default(cuid())
+  id           String @id @default(cuid())
   name         String
-  phone        String?
   openedTicket Chat[]
 }
 

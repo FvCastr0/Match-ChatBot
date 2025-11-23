@@ -3,8 +3,7 @@ import { PrismaService } from "src/prisma/prisma.service";
 
 @Injectable()
 export class CustomerService {
-  private readonly prisma: PrismaService = new PrismaService();
-  constructor() {}
+  constructor(private readonly prisma: PrismaService) {}
   async findCustomer(id: string): Promise<boolean> {
     const hasCustomer = await this.prisma.customer.findFirst({ where: { id } });
 
