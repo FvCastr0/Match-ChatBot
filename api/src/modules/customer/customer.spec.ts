@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { randomUUID } from "crypto";
-import { PrismaService } from "src/prisma/prisma.service";
+import { PrismaService } from "src/shared/lib/prisma/prisma.service";
 import { CustomerService } from "./customer.service";
 
 const prismaServiceMock = {

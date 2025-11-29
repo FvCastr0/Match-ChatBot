@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma.service";
+import { PrismaService } from "src/shared/lib/prisma/prisma.service";
 
 @Injectable()
 export class CustomerService {
@@ -15,7 +15,6 @@ export class CustomerService {
     await this.prisma.customer.create({
       data: {
         id,
-        phone,
         name
       }
     });

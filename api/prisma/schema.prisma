@@ -6,14 +6,29 @@ datasource db {
   provider = "postgresql"
 }
 
+// NOVO: Enum para identificar o remetente da mensagem
+enum SenderType {
+  CUSTOMER // Mensagem enviada pelo cliente
+  BOT // Mensagem enviada pela automação (chatbot)
+  AGENT // Mensagem enviada por um atendente humano
+}
+
 enum Steps {
   business_redirect
   contact_reason
   place_order_pizza
   place_order_burger
-  place_oder_fihass
+  place_order_fihass
   report_problem
+  attendant
   finished
+}
+
+enum ContactReason {
+  order
+  delivery
+  app
+  feedback
 }
 
 model Business {
@@ -25,7 +40,6 @@ model Business {
 model Customer {
   id    String  @id
   name  String?
-  phone String  @unique
   chats Chat[]
 }
 
@@ -35,12 +49,28 @@ model Chat {
   customerId String
   customer   Customer @relation(fields: [customerId], references: [id])
 
-  isActive    Boolean @default(true)
-  currentStep String
+  isActive Boolean @default(true)
+
+  currentStep Steps
 
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
 
   business   Business? @relation(fields: [businessId], references: [id])
   businessId String?
+
+  contactReason ContactReason?
+
+  messages Message[]
+}
+
+model Message {
+  id String @id @default(cuid())
+
+  chatId  String
+  chat    Chat       @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender  SenderType
+  content String     @db.Text
+
+  createdAt DateTime @default(now())
 }

@@ -1,18 +1,28 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+
+import { BullModule } from "@nestjs/bullmq";
 import { CustomerModule } from "./modules/customer/customer.module";
-import { WhatsappModule } from "./modules/whatsapp/whatsapp.module";
-import { PrismaModule } from "./prisma/prisma.module";
+import { WebhookModule } from "./modules/webhook/webhook.module";
+import { WorkerModule } from "./modules/worker/worker.module";
+import { PrismaModule } from "./shared/lib/prisma/prisma.module";
 
 @Module({
   imports: [
-    WhatsappModule,
-    CustomerModule,
     ConfigModule.forRoot({
       isGlobal: true
     }),
+    BullModule.forRoot({
+      connection: {
+        host: "localhost",
+        port: Number(process.env.REDIS_PORT) || 6379
+      }
+    }),
+    WebhookModule,
+    CustomerModule,
     PrismaModule,
-    CustomerModule
+    CustomerModule,
+    WorkerModule
   ]
 })
 export class AppModule {}

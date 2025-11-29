@@ -1,12 +1,15 @@
+import { InjectQueue } from "@nestjs/bullmq";
 import { Body, Controller, Get, Post, Query, Res } from "@nestjs/common";
+import type { Queue } from "bullmq";
 import type { Response } from "express";
 import { ProcessRecivedData } from "src/shared/utils/processRecivedData";
-import { CustomerService } from "../customer/customer.service";
 
 @Controller("webhook")
-export class WhatsappController {
+export class WebhookController {
   private readonly VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
-  constructor(private readonly customerService: CustomerService) {}
+  constructor(
+    @InjectQueue("message-queue") private readonly messageQueue: Queue
+  ) {}
 
   @Get()
   verifyWebhook(
@@ -25,16 +28,18 @@ export class WhatsappController {
   @Post()
   async reciveMessage(@Body() body: any, @Res() res: Response) {
     const dataMsg = ProcessRecivedData(body);
-    if (dataMsg === null) return res.send(404);
-    const hasCustomer = await this.customerService.findCustomer(dataMsg.id);
+    if (dataMsg === null) return res.sendStatus(200);
 
-    if (!hasCustomer) {
-      await this.customerService.createCustomer(
-        dataMsg.id,
-        dataMsg.name,
-        dataMsg.phone
-      );
+    try {
+      await this.messageQueue.add("new-message", dataMsg, {
+        attempts: 3,
+        removeOnComplete: true
+      });
+
+      return res.sendStatus(200);
+    } catch (error) {
+      console.error("Falha ao adicionar job na fila:", error);
+      return res.sendStatus(500);
     }
-    return res.sendStatus(200);
   }
 }
