@@ -15,6 +15,7 @@ export class CustomerService {
     await this.prisma.customer.create({
       data: {
         id,
+        phone,
         name
       }
     });

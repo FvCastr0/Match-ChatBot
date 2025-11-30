@@ -6,7 +6,7 @@ const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 
 const API_URL = `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`;
 
-export async function sendMessage(phone: number, template: string) {
+export async function sendMessage(phone: string, template: string) {
   const payload = {
     messaging_product: "whatsapp",
     recipient_type: "individual",

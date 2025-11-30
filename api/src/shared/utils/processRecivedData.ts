@@ -1,15 +1,18 @@
-export function ProcessRecivedData(data: any): {
-  id: string;
+export interface MessageData {
+  customerId: string;
   phone: string;
   msg: string;
   timeLastMsg: number;
   name: string;
-} | null {
+}
+
+export function ProcessRecivedData(data: any): MessageData | null {
   const changes = data.entry?.[0]?.changes?.[0];
   const value = changes?.value;
 
   if (value?.messages) {
     const message = value.messages[0];
+
     const messageValue = (): string => {
       if (message.type === "text") {
         return message.text.body;
@@ -28,16 +31,15 @@ export function ProcessRecivedData(data: any): {
       }
     }
 
-    const costumerId = data.entry[0].id;
-    const costumerPhone = message.from;
-    const costumerMessage = messageValue();
+    const customerId = data.entry[0].id;
+    const customerPhone = message.from;
+    const customerMessage = messageValue();
     const timeLastMsg = message.timestamp;
     const customerName = hasName();
-
     return {
-      id: costumerId,
-      phone: costumerPhone,
-      msg: costumerMessage,
+      customerId: customerId,
+      phone: customerPhone,
+      msg: customerMessage,
       name: customerName,
       timeLastMsg: Number(timeLastMsg)
     };
