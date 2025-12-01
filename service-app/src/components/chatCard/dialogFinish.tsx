@@ -16,7 +16,7 @@ export function DialogFinish() {
     <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button className=" border bg-transparent text-red-600 border-red-600 cursor-pointer hover:border-red-300 hover:text-red-300 hover:bg-transparent mx-7">
-          Finalizar atendimento
+          Finalizar
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
