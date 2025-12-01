@@ -31,10 +31,22 @@ enum ContactReason {
   feedback
 }
 
+enum Roles {
+  manager
+  attendant
+}
+
 model Business {
   id           String @id @default(cuid())
   name         String
   openedTicket Chat[]
+}
+
+model User {
+  id       String @id
+  user     String @unique
+  password String
+  role     Roles
 }
 
 model Customer {

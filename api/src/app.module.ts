@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 
 import { BullModule } from "@nestjs/bullmq";
 import { CustomerModule } from "./modules/customer/customer.module";
+import { UserModule } from "./modules/user/user.module";
 import { WebhookModule } from "./modules/webhook/webhook.module";
 import { WorkerModule } from "./modules/worker/worker.module";
 import { PrismaModule } from "./shared/lib/prisma/prisma.module";
@@ -22,7 +23,8 @@ import { PrismaModule } from "./shared/lib/prisma/prisma.module";
     CustomerModule,
     PrismaModule,
     CustomerModule,
-    WorkerModule
+    WorkerModule,
+    UserModule
   ]
 })
 export class AppModule {}
