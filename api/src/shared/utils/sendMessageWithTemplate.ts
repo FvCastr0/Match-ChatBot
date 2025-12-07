@@ -6,15 +6,17 @@ const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 
 const API_URL = `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`;
 
-export async function sendTextMessage(phone: string, message: string) {
+export async function sendMessageWithTemplate(phone: string, template: string) {
   const payload = {
     messaging_product: "whatsapp",
     recipient_type: "individual",
     to: phone,
-    type: "text",
-    text: {
-      preview_url: false,
-      body: message
+    type: "template",
+    template: {
+      name: template,
+      language: {
+        code: "pt_BR"
+      }
     }
   };
 

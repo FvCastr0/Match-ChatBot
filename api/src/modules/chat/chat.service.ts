@@ -1,10 +1,14 @@
 import { Injectable } from "@nestjs/common";
 import { ContactReason, Steps } from "@prisma/client";
 import { PrismaService } from "src/shared/lib/prisma/prisma.service";
+import { BusinessService } from "../business/business.service";
 
 @Injectable()
 export class ChatService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly businessService: BusinessService
+  ) {}
   async findChatAndIsActive(customerId: string) {
     const chat = await this.prisma.chat.findFirst({
       where: { isActive: true, customerId },
@@ -17,13 +21,7 @@ export class ChatService {
 
   async findChatData(chatId: string) {
     const chatData = await this.prisma.chat.findUnique({
-      where: { id: chatId },
-      select: {
-        currentStep: true,
-        business: true,
-        contactReason: true,
-        customer: true
-      }
+      where: { id: chatId }
     });
 
     return chatData;
@@ -44,6 +42,20 @@ export class ChatService {
       where: { id: chatId },
       data: { currentStep: step }
     });
+  }
+
+  async updateBusinessChat(chatId: string, businessName: string) {
+    const business =
+      await this.businessService.findBusinessByName(businessName);
+    if (business)
+      await this.prisma.chat.update({
+        where: { id: chatId },
+        data: {
+          business: {
+            connect: { id: business.id }
+          }
+        }
+      });
   }
 
   async updateContactReason(chatId: string, contactReason: ContactReason) {
