@@ -26,8 +26,7 @@ enum Steps {
 
 enum ContactReason {
   order
-  delivery
-  app
+  problem
   feedback
 }
 

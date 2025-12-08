@@ -1,6 +1,6 @@
 import { BullModule } from "@nestjs/bullmq";
 import { Module } from "@nestjs/common";
-import { BusinessModule } from "../business/business.module";
+import { QueueModule } from "src/queue/queue.module";
 import { ChatModule } from "../chat/chat.module";
 import { CustomerModule } from "../customer/customer.module";
 import { MessageModule } from "../message/message.module";
@@ -11,10 +11,10 @@ import { WorkerProcessor } from "./worker.processor";
     BullModule.registerQueue({
       name: "message-queue"
     }),
+    QueueModule,
+    MessageModule,
     CustomerModule,
-    ChatModule,
-    BusinessModule,
-    MessageModule
+    ChatModule
   ],
   providers: [WorkerProcessor],
   exports: [WorkerModule]

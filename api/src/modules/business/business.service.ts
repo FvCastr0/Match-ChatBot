@@ -8,7 +8,7 @@ export class BusinessService extends BusinessRepository {
   constructor(private readonly prisma: PrismaService) {
     super();
   }
-  async findBusinessByName(name: string): Promise<Business | null> {
+  async findByName(name: string): Promise<Business | null> {
     const business = await this.prisma.business.findFirst({
       where: {
         name
@@ -19,7 +19,7 @@ export class BusinessService extends BusinessRepository {
     else return business;
   }
 
-  async findBusinessById(id: string) {
+  async findById(id: string) {
     const business = await this.prisma.business.findFirst({
       where: {
         id

@@ -7,6 +7,7 @@ import { MessageModule } from "./modules/message/message.module";
 import { UserModule } from "./modules/user/user.module";
 import { WebhookModule } from "./modules/webhook/webhook.module";
 import { WorkerModule } from "./modules/worker/worker.module";
+import { QueueModule } from "./queue/queue.module";
 import { PrismaModule } from "./shared/lib/prisma/prisma.module";
 
 @Module({
@@ -26,7 +27,8 @@ import { PrismaModule } from "./shared/lib/prisma/prisma.module";
     CustomerModule,
     WorkerModule,
     UserModule,
-    MessageModule
+    MessageModule,
+    QueueModule
   ]
 })
 export class AppModule {}

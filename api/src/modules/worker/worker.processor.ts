@@ -1,21 +1,20 @@
-import { Processor, WorkerHost } from "@nestjs/bullmq"; // Importe WorkerHost!
-import { Chat, ContactReason, Steps } from "@prisma/client";
+// src/queue/worker.processor.ts
+import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { Job } from "bullmq";
+import { StepHandlerFactory } from "src/queue/step-handler-factory";
 import { MessageData } from "src/shared/utils/processRecivedData";
-import { sendTextMessage } from "src/shared/utils/sendMessage";
 import { sendMessageWithTemplate } from "src/shared/utils/sendMessageWithTemplate";
-import { BusinessService } from "../business/business.service";
 import { ChatService } from "../chat/chat.service";
 import { CustomerService } from "../customer/customer.service";
-import { MessageService } from "./../message/message.service";
+import { MessageService } from "../message/message.service";
 
 @Processor("message-queue")
 export class WorkerProcessor extends WorkerHost {
   constructor(
     private readonly customerService: CustomerService,
     private readonly chatService: ChatService,
-    private readonly businessService: BusinessService,
-    private readonly messageService: MessageService
+    private readonly messageService: MessageService,
+    private readonly stepFactory: StepHandlerFactory
   ) {
     super();
   }
@@ -23,15 +22,12 @@ export class WorkerProcessor extends WorkerHost {
   override async process(job: Job<any>) {
     const dataMsg = job.data as MessageData;
 
-    if (job.name !== "new-message") {
-      return;
-    }
+    if (job.name !== "new-message") return;
 
     try {
       const customer = await this.customerService.findCustomer(
         dataMsg.customerId
       );
-
       if (!customer) {
         await this.customerService.createCustomer(
           dataMsg.customerId,
@@ -40,139 +36,30 @@ export class WorkerProcessor extends WorkerHost {
         );
       }
 
-      const hasActiveChat = await this.chatService.findChatAndIsActive(
+      const hasActiveChat = await this.chatService.findAndIsActive(
         dataMsg.customerId
       );
 
-      const getMessageInfoBusiness = (): { step: string; place: string } => {
-        switch (dataMsg.msg) {
-          case "Match Pizza":
-            return { step: Steps.place_order_pizza, place: "Match Pizza" };
-          case "Smatch Burger":
-            return { step: Steps.place_order_pizza, place: "Smatch Burger" };
-          case "Fihass":
-            return { step: Steps.place_order_pizza, place: "Fihass" };
-          default:
-            return { step: "", place: "" };
-        }
-      };
-
-      const getMessageInfoReason = async (chatData: Chat) => {
-        if (!chatData.businessId) return null;
-
-        const businessName = await this.businessService.findBusinessById(
-          chatData.businessId
+      if (!hasActiveChat) {
+        const chat = await this.chatService.create(dataMsg.customerId);
+        await this.messageService.createMessage(
+          chat.id,
+          dataMsg.msg,
+          "CUSTOMER"
         );
-
-        if (hasActiveChat)
-          switch (dataMsg.msg) {
-            case "Quero fazer um pedido":
-              if (businessName?.name === "Match Pizza") {
-                sendMessageWithTemplate(dataMsg.phone, "place_order_pizza");
-                await this.chatService.updateChatActive(chatData.id, false);
-                await this.chatService.updateContactReason(
-                  chatData.id,
-                  ContactReason.order
-                );
-
-                await this.chatService.updateChatStep(
-                  hasActiveChat.id,
-                  "finished"
-                );
-                return;
-              }
-              if (businessName?.name === "Smatch Burger") {
-                sendMessageWithTemplate(dataMsg.phone, "place_order_burger");
-                await this.chatService.updateChatActive(chatData.id, false);
-
-                await this.chatService.updateContactReason(
-                  chatData.id,
-                  ContactReason.order
-                );
-
-                await this.chatService.updateChatStep(
-                  hasActiveChat.id,
-                  "finished"
-                );
-                return;
-              }
-              if (businessName?.name === "Fihass") {
-                sendMessageWithTemplate(dataMsg.phone, "place_order_fihass");
-                await this.chatService.updateChatActive(chatData.id, false);
-                await this.chatService.updateContactReason(
-                  chatData.id,
-                  ContactReason.order
-                );
-                await this.chatService.updateChatStep(
-                  hasActiveChat.id,
-                  "finished"
-                );
-                return;
-              }
-              break;
-            case "Estou tendo problemas":
-              break;
-            case "Quero dar um feedback":
-              sendTextMessage(
-                dataMsg.phone,
-                "Perfeito! Envie seu feedback por aqui mesmo!"
-              );
-              break;
-            default:
-              sendTextMessage(
-                dataMsg.phone,
-                "Você deve selecionar um dos três motivos para continuar seu atendimento."
-              );
-              return { step: "", place: "" };
-          }
-      };
-
-      if (hasActiveChat) {
-        const chatData = await this.chatService.findChatData(hasActiveChat.id);
-
-        switch (chatData?.currentStep) {
-          case "started":
-            if (
-              getMessageInfoBusiness().place === "" ||
-              getMessageInfoBusiness().step === ""
-            ) {
-              sendTextMessage(
-                dataMsg.phone,
-                "Você deve selecionar uma das três empresas ou digitar o nome delas."
-              );
-            } else {
-              sendMessageWithTemplate(dataMsg.phone, "contact");
-              this.chatService.updateChatStep(
-                hasActiveChat.id,
-                "contact_reason"
-              );
-              this.chatService.updateBusinessChat(
-                hasActiveChat.id,
-                getMessageInfoBusiness().place
-              );
-            }
-            break;
-          case "contact_reason":
-            await getMessageInfoReason(chatData);
-            break;
-        }
-      } else {
-        const chat = await this.chatService.createChat(dataMsg.customerId);
-        await this.messageService
-          .createMessage(chat.id, dataMsg.msg, "CUSTOMER")
-          .then(async () => {
-            await sendMessageWithTemplate(dataMsg.phone, "business_redirect");
-            await this.messageService.createMessage(
-              chat.id,
-              "Mensagem redirecionamento empresa",
-              "BOT"
-            );
-          });
+        await sendMessageWithTemplate(dataMsg.phone, "business_redirect");
+        await this.messageService.createMessage(
+          chat.id,
+          "Mensagem redirecionamento empresa",
+          "BOT"
+        );
+        return;
       }
 
-      console.log(`Job ${job.id} processado com sucesso.`);
+      const chatData = await this.chatService.findData(hasActiveChat.id);
+      const handler = this.stepFactory.getHandler(chatData?.currentStep);
+      await handler.handle(chatData, dataMsg);
     } catch (error) {
-      console.error(`Falha ao processar job ${job.id}:`, error);
       throw error;
     }
   }
