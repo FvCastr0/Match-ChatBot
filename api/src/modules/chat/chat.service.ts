@@ -28,13 +28,14 @@ export class ChatService {
   }
 
   async createChat(customerId: string) {
-    await this.prisma.chat.create({
+    const chat = await this.prisma.chat.create({
       data: {
         customerId,
         currentStep: Steps.started,
         isActive: true
       }
     });
+    return chat;
   }
 
   async updateChatStep(chatId: string, step: Steps) {

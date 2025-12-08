@@ -7,13 +7,15 @@ import { sendMessageWithTemplate } from "src/shared/utils/sendMessageWithTemplat
 import { BusinessService } from "../business/business.service";
 import { ChatService } from "../chat/chat.service";
 import { CustomerService } from "../customer/customer.service";
+import { MessageService } from "./../message/message.service";
 
 @Processor("message-queue")
 export class WorkerProcessor extends WorkerHost {
   constructor(
     private readonly customerService: CustomerService,
     private readonly chatService: ChatService,
-    private readonly businessService: BusinessService
+    private readonly businessService: BusinessService,
+    private readonly messageService: MessageService
   ) {
     super();
   }
@@ -155,8 +157,17 @@ export class WorkerProcessor extends WorkerHost {
             break;
         }
       } else {
-        await this.chatService.createChat(dataMsg.customerId);
-        await sendMessageWithTemplate(dataMsg.phone, "business_redirect");
+        const chat = await this.chatService.createChat(dataMsg.customerId);
+        await this.messageService
+          .createMessage(chat.id, dataMsg.msg, "CUSTOMER")
+          .then(async () => {
+            await sendMessageWithTemplate(dataMsg.phone, "business_redirect");
+            await this.messageService.createMessage(
+              chat.id,
+              "Mensagem redirecionamento empresa",
+              "BOT"
+            );
+          });
       }
 
       console.log(`Job ${job.id} processado com sucesso.`);

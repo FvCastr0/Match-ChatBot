@@ -1,17 +1,17 @@
 import { Injectable } from "@nestjs/common";
+import { Business } from "@prisma/client";
+import { BusinessRepository } from "src/repositories/business.repository";
 import { PrismaService } from "src/shared/lib/prisma/prisma.service";
 
 @Injectable()
-export class BusinessService {
-  constructor(private readonly prisma: PrismaService) {}
-  async findBusinessByName(name: string) {
+export class BusinessService extends BusinessRepository {
+  constructor(private readonly prisma: PrismaService) {
+    super();
+  }
+  async findBusinessByName(name: string): Promise<Business | null> {
     const business = await this.prisma.business.findFirst({
       where: {
         name
-      },
-      select: {
-        id: true,
-        name: true
       }
     });
 

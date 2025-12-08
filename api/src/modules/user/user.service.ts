@@ -2,13 +2,16 @@ import { Injectable } from "@nestjs/common";
 import { Roles } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 import { randomUUID } from "crypto";
+import { UserRepository } from "src/repositories/user.repository";
 import { PrismaService } from "src/shared/lib/prisma/prisma.service";
 
 const saltRounds = 10;
 
 @Injectable()
-export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+export class UserService extends UserRepository {
+  constructor(private readonly prisma: PrismaService) {
+    super();
+  }
   async returnAllUsers() {
     return await this.prisma.user.findMany({
       select: {
@@ -20,7 +23,10 @@ export class UserService {
   }
 
   async findUserByUsername(user: string) {
-    return await this.prisma.user.findUnique({ where: { user } });
+    return await this.prisma.user.findUnique({
+      where: { user },
+      select: { user: true, role: true, id: true }
+    });
   }
 
   async create({

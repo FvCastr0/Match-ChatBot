@@ -3,6 +3,7 @@ import { Module } from "@nestjs/common";
 import { BusinessModule } from "../business/business.module";
 import { ChatModule } from "../chat/chat.module";
 import { CustomerModule } from "../customer/customer.module";
+import { MessageModule } from "../message/message.module";
 import { WorkerProcessor } from "./worker.processor";
 
 @Module({
@@ -12,7 +13,8 @@ import { WorkerProcessor } from "./worker.processor";
     }),
     CustomerModule,
     ChatModule,
-    BusinessModule
+    BusinessModule,
+    MessageModule
   ],
   providers: [WorkerProcessor],
   exports: [WorkerModule]
