@@ -8,4 +8,8 @@ export abstract class UserRepository {
     user: string
   ): Promise<UserWithoutPassword | null>;
   abstract create({ user, password, role }: User): Promise<boolean>;
+  abstract findAndVerifyPassword(
+    name: string,
+    password: string
+  ): Promise<UserWithoutPassword | null>;
 }

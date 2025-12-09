@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { Roles } from "@prisma/client";
+import { Roles, User } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 import { randomUUID } from "crypto";
 import { UserRepository } from "src/repositories/user.repository";
@@ -46,5 +46,21 @@ export class UserService extends UserRepository {
       });
       return true;
     } else return false;
+  }
+
+  async findAndVerifyPassword(
+    name: string,
+    password: string
+  ): Promise<User | null> {
+    const find = await this.prisma.user.findFirst({
+      where: {
+        user: name
+      }
+    });
+
+    if (find) {
+      if (await bcrypt.compare(password, find.password)) return find;
+    }
+    return null;
   }
 }

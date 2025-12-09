@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 
 import { BullModule } from "@nestjs/bullmq";
+import { AuthModule } from "./auth/auth.module";
 import { CustomerModule } from "./modules/customer/customer.module";
 import { MessageModule } from "./modules/message/message.module";
 import { UserModule } from "./modules/user/user.module";
@@ -28,7 +29,8 @@ import { PrismaModule } from "./shared/lib/prisma/prisma.module";
     WorkerModule,
     UserModule,
     MessageModule,
-    QueueModule
+    QueueModule,
+    AuthModule
   ]
 })
 export class AppModule {}

@@ -13,7 +13,6 @@ import { sendTextMessage } from "src/shared/utils/sendTextMessage";
 export class ContactReasonHandler implements StepHandler {
   private readonly intentKeywords = {
     order: [
-      "quero fazer um pedido",
       "fazer pedido",
       "quero pedir",
       "fazer um pedido",
@@ -22,7 +21,10 @@ export class ContactReasonHandler implements StepHandler {
       "realizar pedido",
       "gostaria de pedir",
       "pedido",
-      "pedir"
+      "pedir",
+      "encomendar",
+      "fazer uma encomenda",
+      "encomenda"
     ],
 
     feedback: [
@@ -70,11 +72,10 @@ export class ContactReasonHandler implements StepHandler {
     if (category === "order") {
       if (typeof chat.businessId !== "string") return;
       const business = await this.businessService.findById(chat.businessId);
-      if (!business) {
-        await sendTextMessage(
-          dataMsg.phone,
-          "Você deve selecionar uma das três opções acima."
-        );
+
+      if (business === null) {
+        await sendTextMessage(dataMsg.phone, "Empresa não foi encontrada");
+
         await this.messageService.createMessage(
           chat.id,
           "Opção não selecionada",
@@ -83,20 +84,17 @@ export class ContactReasonHandler implements StepHandler {
         return;
       }
 
-      if (business.name === "Match Pizza") {
+      if (business.name === "match_pizza") {
         await sendMessageWithTemplate(dataMsg.phone, "place_order_pizza");
-      } else if (business.name === "Smatch Burger") {
+      } else if (business.name === "smatch_burger") {
         await sendMessageWithTemplate(dataMsg.phone, "place_order_burger");
-      } else if (business.name === "Fihass") {
+      } else if (business.name === "fihass") {
         await sendMessageWithTemplate(dataMsg.phone, "place_order_fihass");
       } else {
-        await sendTextMessage(
-          dataMsg.phone,
-          "Você deve selecionar uma das três opções acima."
-        );
+        await sendTextMessage(dataMsg.phone, "Problema ao encontrar empresa.");
         await this.messageService.createMessage(
           chat.id,
-          "Opção não selecionada",
+          "PROBLEMA INTERNO!!!",
           "BOT"
         );
       }
