@@ -50,7 +50,10 @@ export class ContactReasonHandler implements StepHandler {
       "bug",
       "falha",
       "preciso de ajuda",
-      "ajuda"
+      "ajuda",
+      "problema",
+      "defeito",
+      "falha"
     ]
   };
 
@@ -119,6 +122,18 @@ export class ContactReasonHandler implements StepHandler {
         chat.id,
         ContactReason.feedback
       );
+      return;
+    }
+
+    if (category === "problem") {
+      await sendMessageWithTemplate(dataMsg.phone, "problem");
+      await this.messageService.createMessage(
+        chat.id,
+        "Mensagem reportar problema",
+        "BOT"
+      );
+      await this.chatService.updateContactReason(chat.id, "problem");
+      await this.chatService.updateStep(chat.id, "attendant");
       return;
     }
 
