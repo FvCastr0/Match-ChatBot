@@ -1,5 +1,5 @@
-import { Injectable } from "@nestjs/common";
-import { ContactReason, Steps } from "@prisma/client";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Chat, ContactReason, Steps } from "@prisma/client";
 import { ChatRepository } from "src/repositories/chat.repository";
 import { PrismaService } from "src/shared/lib/prisma/prisma.service";
 import { BusinessService } from "../business/business.service";
@@ -75,5 +75,17 @@ export class ChatService extends ChatRepository {
       where: { id: chatId },
       data: { contactReason }
     });
+  }
+
+  async findChatAttendant(): Promise<Chat[] | null> {
+    try {
+      return await this.prisma.chat.findMany({
+        where: {
+          currentStep: "attendant"
+        }
+      });
+    } catch (e) {
+      throw new UnauthorizedException("Não foi possível carregar os chats.");
+    }
   }
 }

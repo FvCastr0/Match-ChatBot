@@ -15,4 +15,5 @@ export abstract class ChatRepository {
     id: string,
     contactReason: ContactReason
   ): Promise<void>;
+  abstract findChatAttendant(): Promise<Chat[] | null>;
 }

@@ -1,28 +1,19 @@
-import {
-  Body,
-  Controller,
-  Post,
-  UnauthorizedException,
-  UseGuards
-} from "@nestjs/common";
+import { Controller, Get, Res, UseGuards } from "@nestjs/common";
+import type { Response } from "express";
 import { JwtAuthGuard } from "src/auth/jwt.guard";
-import { MessageService } from "../message/message.service";
-import { attendantMessageDto } from "./dto/attendantMessage.dto";
+import { ChatService } from "./chat.service";
 
 @Controller("chat")
 export class ChatController {
-  constructor(private readonly messageService: MessageService) {}
+  constructor(private readonly chatService: ChatService) {}
+
   @UseGuards(JwtAuthGuard)
-  @Post("message")
-  async attendantMessage(@Body() data: attendantMessageDto) {
+  @Get("problems")
+  async findChats(@Res() res: Response) {
     try {
-      await this.messageService.createMessage(
-        data.chatId,
-        data.message,
-        "AGENT"
-      );
+      return await this.chatService.findChatAttendant();
     } catch (e) {
-      throw new UnauthorizedException("Não foi possivel enviar a mensagem.");
+      return res.sendStatus(500).send({ msgs: "Erro no servidor." });
     }
   }
 }

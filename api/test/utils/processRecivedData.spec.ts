@@ -46,7 +46,7 @@ describe("Process Recived Data Parser", () => {
 
     expect(result).not.toBeNull();
 
-    expect(result?.id).toBe("WHATSAPP_BUSINESS_ACCOUNT_ID");
+    expect(result?.customerId).toBe("WHATSAPP_BUSINESS_ACCOUNT_ID");
     expect(result?.phone).toBe("5511999998888");
     expect(result?.name).toBe("João Testador");
     expect(result?.msg).toBe("Olá, esta é uma mensagem de teste!");
