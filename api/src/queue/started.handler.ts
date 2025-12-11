@@ -30,6 +30,7 @@ export class StartedHandler implements StepHandler {
 
     await this.messageService.createMessage(chat.id, dataMsg.msg, "CUSTOMER");
     const businessName = detectCategory(dataMsg.msg, this.companyKeywords);
+
     if (typeof businessName !== "string") return;
     const business = await this.businessService.findByName(businessName);
     if (!business) {
