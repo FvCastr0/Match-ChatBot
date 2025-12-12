@@ -28,6 +28,7 @@ export class WorkerProcessor extends WorkerHost {
       const customer = await this.customerService.findCustomer(
         dataMsg.customerId
       );
+
       if (!customer) {
         await this.customerService.createCustomer(
           dataMsg.customerId,
