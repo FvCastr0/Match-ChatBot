@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { Chat, ContactReason } from "@prisma/client";
 import { BusinessService } from "src/modules/business/business.service";
+import { ChatGateway } from "src/modules/chat/chat.gateway";
 import { ChatService } from "src/modules/chat/chat.service";
 import { MessageService } from "src/modules/message/message.service";
 import { StepHandler } from "src/repositories/queue.repository";
@@ -60,7 +61,8 @@ export class ContactReasonHandler implements StepHandler {
   constructor(
     private readonly chatService: ChatService,
     private readonly businessService: BusinessService,
-    private readonly messageService: MessageService
+    private readonly messageService: MessageService,
+    private readonly chatGateway: ChatGateway
   ) {}
 
   async handle(chat: Chat | null, dataMsg: MessageData): Promise<void> {
@@ -134,6 +136,10 @@ export class ContactReasonHandler implements StepHandler {
       );
       await this.chatService.updateContactReason(chat.id, "problem");
       await this.chatService.updateStep(chat.id, "attendant");
+
+      const chatPayload = await this.chatService.getChatPayload(chat.id);
+
+      this.chatGateway.emitNewTicket(chatPayload);
       return;
     }
 

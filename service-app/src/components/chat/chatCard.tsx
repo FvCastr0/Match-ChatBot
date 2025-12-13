@@ -1,11 +1,6 @@
+import { logoMap } from "@/lib/logoMap";
 import Image from "next/image";
 import { Card, CardDescription, CardHeader, CardTitle } from "../ui/card";
-
-const logoMap: { [key: string]: string } = {
-  "Match Pizza": "/imgs/logos/match.png",
-  "Smatch Burger": "/imgs/logos/smatch.png",
-  Fihass: "/imgs/logos/fihass.png"
-};
 
 type ChatCardProps = {
   business: string;
@@ -19,8 +14,8 @@ export default function ChatCard({
   business,
   customerName,
   customerPhone,
-  contactReason,
-  isSelected
+  isSelected,
+  contactReason
 }: ChatCardProps) {
   const logoSrc = logoMap[business];
 
@@ -36,13 +31,13 @@ export default function ChatCard({
       `}
     >
       <CardHeader>
-        <div className="flex justify-between items-start gap-4">
+        <div className="flex justify-between items-start gap-1">
           <div className="flex-1">
             <CardTitle className="text-base font-bold md:text-lg mb-2">
               {customerName}
             </CardTitle>
             <CardDescription className="text-xs md:text-sm mb-1">
-              <strong className="text-slate-500">Descrição: </strong>
+              <strong className="text-slate-500">Última mensgem: </strong>
               {contactReason}
             </CardDescription>
             <CardDescription className="text-xs md:text-sm">

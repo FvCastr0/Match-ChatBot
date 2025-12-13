@@ -3,12 +3,14 @@ import { Chat, ContactReason, Steps } from "@prisma/client";
 import { ChatRepository } from "src/repositories/chat.repository";
 import { PrismaService } from "src/shared/lib/prisma/prisma.service";
 import { BusinessService } from "../business/business.service";
+import { ChatGateway } from "./chat.gateway";
 
 @Injectable()
 export class ChatService extends ChatRepository {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly businessService: BusinessService
+    private readonly businessService: BusinessService,
+    private readonly chatGateway: ChatGateway
   ) {
     super();
   }
@@ -62,12 +64,16 @@ export class ChatService extends ChatRepository {
   }
 
   async finishChat(id: string): Promise<void> {
-    await this.prisma.chat.update({
+    const updatedTicket = await this.prisma.chat.update({
       where: { id },
       data: { isActive: false }
     });
 
     await this.updateStep(id, "finished");
+
+    this.chatGateway.server.emit("ticketClosed", {
+      ticketId: updatedTicket.id
+    });
   }
 
   async updateContactReason(chatId: string, contactReason: ContactReason) {
@@ -79,13 +85,33 @@ export class ChatService extends ChatRepository {
 
   async findChatAttendant(): Promise<Chat[] | null> {
     try {
-      return await this.prisma.chat.findMany({
+      const chat = await this.prisma.chat.findMany({
         where: {
           currentStep: "attendant"
+        },
+        include: {
+          business: true,
+          customer: true,
+          messages: true
         }
       });
+
+      return chat;
     } catch (e) {
       throw new UnauthorizedException("Não foi possível carregar os chats.");
     }
+  }
+
+  getChatPayload(chatId: string): Promise<any> {
+    return this.prisma.chat.findUnique({
+      where: { id: chatId },
+      include: {
+        customer: true,
+        business: true,
+        messages: {
+          orderBy: { createdAt: "asc" }
+        }
+      }
+    });
   }
 }

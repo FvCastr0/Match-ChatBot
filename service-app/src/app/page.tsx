@@ -1,171 +1,267 @@
 "use client";
 
+import ChatCard from "@/components/chat/chatCard";
+import { DialogFinish } from "@/components/chat/dialogFinish";
+import MessageBubble from "@/components/chat/message";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import Image from "next/image";
-import { useState } from "react";
-
-import MessageBubble from "@/components/chat";
-import ChatCard from "@/components/chatCard";
-import { DialogFinish } from "@/components/chatCard/dialogFinish";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getProblemsData } from "@/lib/getProblemsData";
+import { logoMap } from "@/lib/logoMap";
+import { sendMessage } from "@/lib/sendMessage";
+import { ArrowLeft, Send } from "lucide-react";
+import Image from "next/image";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { io } from "socket.io-client";
+import { ITicket } from "../interface/ITicket";
 
-type Ticket = {
-  id: number;
-  business: string;
-  customerName: string;
-  customerPhone: string;
-  contactReason: string;
-};
-
-const logoMap: { [key: string]: string } = {
-  "Match Pizza": "/imgs/logos/match.png",
-  "Smatch Burger": "/imgs/logos/smatch.png",
-  Fihass: "/imgs/logos/fihass.png"
-};
-
-const mockMessages = [
-  {
-    id: 1,
-    text: "Boa tarde",
-    timestamp: "14:35",
-    isSender: true
-  },
-  {
-    id: 2,
-    text: "sim",
-    timestamp: "14:46",
-    isSender: false,
-    senderName: "Cliente"
-  },
-  {
-    id: 3,
-    text: "como ce ta",
-    timestamp: "14:57",
-    isSender: true
-  },
-  {
-    id: 4,
-    text: "sei la mano",
-    timestamp: "14:58",
-    isSender: false,
-    senderName: "Cliente"
-  },
-  { id: 5, text: "blz", timestamp: "14:59", isSender: true }
-];
-
-const mockTickets: Ticket[] = [
-  {
-    id: 1,
-    business: "Match Pizza",
-    customerName: "Fernando",
-    customerPhone: "32991966510",
-    contactReason: "Meu pedido veio errado."
-  },
-  {
-    id: 2,
-    business: "Smatch Burger",
-    customerName: "Jorge",
-    customerPhone: "32991966511",
-    contactReason: "Atraso na entrega."
-  },
-  {
-    id: 3,
-    business: "Fihass",
-    customerName: "Marcos",
-    customerPhone: "32991966512",
-    contactReason: "Item faltando."
-  }
-];
+const SOCKET_URL = "http://localhost:3000";
 
 export default function Home() {
-  const [selectedChat, setSelectedChat] = useState<Ticket | null>(null);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [tickets, setTickets] = useState<Array<ITicket>>([]);
+  const [messageInput, setMessageInput] = useState<string>("");
+  const socket = useMemo(
+    () =>
+      io(SOCKET_URL, {
+        reconnection: false
+      }),
+    []
+  );
+
+  const ticketsRef = useRef<Array<ITicket>>([]);
+  const selectedChatIdRef = useRef<string | null>(null);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const selectedChat = useMemo(
+    () => tickets.find(t => t.id === selectedChatId) || null,
+    [tickets, selectedChatId]
+  );
+
+  // Keep ticketsRef updated
+  useEffect(() => {
+    ticketsRef.current = tickets;
+  }, [tickets]);
+
+  // Keep selectedChatIdRef updated
+  useEffect(() => {
+    selectedChatIdRef.current = selectedChatId;
+  }, [selectedChatId]);
+
+  // Scroll to bottom
+  useEffect(() => {
+    if (selectedChat) {
+      scrollToBottom();
+    }
+  }, [selectedChat?.messages.length, selectedChat]);
+
+  // Fetch tickets data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getProblemsData();
+        if (data.data) setTickets(data.data);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Socket event listeners
+  useEffect(() => {
+    if (socket) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handleNewMessage = (payload: any) => {
+        const currentTickets = ticketsRef.current;
+
+        const rawMessage = payload.message || payload;
+        const targetChatId = payload.chatId || rawMessage.chatId;
+
+        if (!currentTickets || currentTickets.length === 0) {
+          console.warn("⚠️ Nenhum ticket carregado no estado atual ainda.");
+        }
+
+        setTickets(prevTickets => {
+          return prevTickets.map(ticket => {
+            if (String(ticket.id) === String(targetChatId)) {
+              const newMessage = {
+                id: rawMessage.id || `temp-${Date.now()}`,
+                content: rawMessage.content || rawMessage.body || "",
+                sender: rawMessage.sender || "CUSTOMER",
+                createdAt: rawMessage.createdAt || new Date().toISOString()
+              };
+
+              return {
+                ...ticket,
+                messages: [...ticket.messages, newMessage],
+                updatedAt: new Date().toISOString()
+              };
+            }
+            return ticket;
+          });
+        });
+      };
+
+      const handleTicketClosed = (payload: { ticketId: string }) => {
+        setTickets(prevTickets => {
+          return prevTickets.filter(t => t.id !== payload.ticketId);
+        });
+
+        if (selectedChatIdRef.current === payload.ticketId) {
+          setSelectedChatId(null);
+        }
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handleNewTicket = (payload: any) => {
+        const chatExists = ticketsRef.current.some(
+          ticket => ticket.id === payload.id
+        );
+        if (!chatExists) {
+          setTickets(prevTickets => [...prevTickets, payload]);
+        }
+      };
+
+      socket.on("newTicket", handleNewTicket);
+      socket.on("createMessage", handleNewMessage);
+      socket.on("ticketClosed", handleTicketClosed);
+      return () => {
+        socket.off("newTicket", handleNewTicket);
+        socket.off("createMessage", handleNewMessage);
+        socket.off("ticketClosed", handleTicketClosed);
+      };
+    }
+  }, [socket, setTickets]);
+
+  const handleSendMessage = async () => {
+    setMessageInput("");
+
+    await sendMessage(
+      selectedChatId!,
+      messageInput,
+      selectedChat!.customer.phone
+    );
+  };
+
+  const handleKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && messageInput.trim() !== "") {
+      handleSendMessage();
+    }
+  };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 h-screen overflow-hidden">
+    <div className="grid grid-cols-1 md:grid-cols-12 h-screen">
       <ScrollArea
-        className={`
-          border-r-2 h-full overflow-y-auto bg-slate-50
-          ${selectedChat ? "hidden" : "block"}
-          md:block md:col-span-3
-        `}
+        className={`border-r-2 h-full bg-slate-50 ${
+          selectedChatId ? "hidden" : "block"
+        } md:block md:col-span-3 overflow-y-auto`}
       >
         <div className="p-4 space-y-4">
           <h1 className="text-4xl text-slate-900 font-bold">Conversas</h1>
-          {mockTickets.map(ticket => (
-            <div key={ticket.id} onClick={() => setSelectedChat(ticket)}>
+          {tickets.map(ticket => (
+            <div key={ticket.id} onClick={() => setSelectedChatId(ticket.id)}>
               <ChatCard
-                business={ticket.business}
-                customerName={ticket.customerName}
-                customerPhone={ticket.customerPhone}
-                contactReason={ticket.contactReason}
-                isSelected={selectedChat?.id === ticket.id}
+                business={ticket.business.name}
+                customerName={ticket.customer.name}
+                customerPhone={ticket.customer.phone}
+                contactReason={
+                  ticket.messages.at(-1)?.content || "Sem mensagens"
+                }
+                isSelected={selectedChatId === ticket.id}
               />
             </div>
           ))}
         </div>
       </ScrollArea>
+
       <div
-        className={`
-          h-full flex flex-col bg-slate-100
-          ${selectedChat ? "block" : "hidden"}
-          md:block md:col-span-9
-        `}
+        className={`h-full flex flex-col bg-slate-100 ${
+          selectedChatId ? "block" : "hidden"
+        } md:block md:col-span-9`}
       >
         {selectedChat ? (
           <>
-            <div className="p-4 border-b bg-white flex justify-between items-center">
+            <div className="p-4 border-b bg-white flex justify-between items-center overflow-y-auto h-[77px]">
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setSelectedChat(null)}
+                  onClick={() => setSelectedChatId(null)}
                   className="md:hidden"
                 >
                   <ArrowLeft size={20} />
                 </Button>
 
-                {logoMap[selectedChat.business] && (
+                {logoMap[selectedChat.business.name] && (
                   <Image
-                    src={logoMap[selectedChat.business]}
-                    alt={`${selectedChat.business} logo`}
+                    src={logoMap[selectedChat.business.name]}
+                    alt="Logo"
                     width={40}
                     height={40}
                     className="rounded-lg"
+                    style={{ width: "auto", height: "auto" }}
                   />
                 )}
 
                 <h2 className="font-bold text-lg">
-                  {selectedChat.customerName}
+                  {selectedChat.customer.name}
                 </h2>
               </div>
-
-              <div className="flex items-center">
-                <DialogFinish />
-              </div>
+              <DialogFinish id={selectedChat.id} />
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="flex flex-col gap-3">
-                {mockMessages.map(msg => (
-                  <MessageBubble
-                    key={msg.id}
-                    text={msg.text}
-                    timestamp={msg.timestamp}
-                    isSender={msg.isSender}
-                  />
-                ))}
+            <ScrollArea className="h-[calc(100vh-148px)]">
+              <div className="flex-1 p-4 ">
+                <div className="flex flex-col gap-3">
+                  {selectedChat.messages
+                    .filter(message => message && message.content)
+                    .map((message, index) => (
+                      <MessageBubble
+                        key={index}
+                        isSender={message.sender !== "CUSTOMER"}
+                        text={message.content}
+                        createdAt={new Date(
+                          message.createdAt
+                        ).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        })}
+                      />
+                    ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              </div>
+            </ScrollArea>
+
+            <div className="p-4 bg-white border-t h-[69px] ">
+              <div className="flex items-center gap-2 w-full">
+                <Input
+                  placeholder="Digite uma mensagem"
+                  onSubmit={handleSendMessage}
+                  value={messageInput}
+                  onChange={e => setMessageInput(e.target.value)}
+                  onKeyUp={handleKeyUp}
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="cursor-pointer"
+                  onClick={handleSendMessage}
+                >
+                  <Send color="#1C398E" />
+                </Button>
               </div>
             </div>
           </>
         ) : (
           <div className="h-full hidden md:flex items-center justify-center">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold">Selecione uma conversa</h3>
-              <p className="text-muted-foreground text-sm">
-                Clique em uma conversa à esquerda para ver as mensagens.
-              </p>
-            </div>
+            <h3 className="text-lg font-semibold">Selecione uma conversa</h3>
           </div>
         )}
       </div>

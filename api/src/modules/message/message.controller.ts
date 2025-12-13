@@ -6,6 +6,7 @@ import {
   UseGuards
 } from "@nestjs/common";
 import { JwtAuthGuard } from "src/auth/jwt.guard";
+import { sendTextMessage } from "src/shared/utils/sendTextMessage";
 import { MessageService } from "../message/message.service";
 import { attendantMessageDto } from "./dto/attendantMessage.dto";
 
@@ -17,11 +18,15 @@ export class MessageController {
   @Post("attendant")
   async attendantMessage(@Body() data: attendantMessageDto) {
     try {
-      await this.messageService.createMessage(
+      const newMessage = await this.messageService.createMessage(
         data.chatId,
-        data.message,
+        data.content,
         "AGENT"
       );
+
+      await sendTextMessage(data.phone, data.content);
+
+      return newMessage;
     } catch (e) {
       throw new UnauthorizedException("Não foi possivel enviar a mensagem.");
     }

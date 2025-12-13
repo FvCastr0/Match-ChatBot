@@ -10,8 +10,9 @@ import {
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { finishChat } from "@/lib/finishChat";
 
-export function DialogFinish() {
+export function DialogFinish({ id }: { id: string }) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
@@ -29,7 +30,10 @@ export function DialogFinish() {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction className="bg-red-500 hover:bg-red-900 cursor-pointer">
+          <AlertDialogAction
+            className="bg-red-500 hover:bg-red-900 cursor-pointer"
+            onClick={async () => await finishChat(id)}
+          >
             Continuar
           </AlertDialogAction>
         </AlertDialogFooter>
