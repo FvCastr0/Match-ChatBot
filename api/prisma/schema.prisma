@@ -74,6 +74,9 @@ model Chat {
   contactReason ContactReason?
 
   messages Message[]
+
+  closedAt  DateTime?
+  startedBy SenderType?
 }
 
 model Message {

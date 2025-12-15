@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { finishChat } from "@/lib/finishChat";
+import { toast } from "react-toastify";
 
 export function DialogFinish({ id }: { id: string }) {
   return (
@@ -32,7 +33,10 @@ export function DialogFinish({ id }: { id: string }) {
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
           <AlertDialogAction
             className="bg-red-500 hover:bg-red-900 cursor-pointer"
-            onClick={async () => await finishChat(id)}
+            onClick={async () => {
+              await finishChat(id);
+              toast.success("Chat finalizado com sucesso.");
+            }}
           >
             Continuar
           </AlertDialogAction>

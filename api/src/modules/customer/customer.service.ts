@@ -15,6 +15,15 @@ export class CustomerService extends CustomerRepository {
     else return true;
   }
 
+  async findCustomerByPhone(phone: string): Promise<string | null> {
+    const hasCustomer = await this.prisma.customer.findFirst({
+      where: { phone }
+    });
+
+    if (hasCustomer === null) return null;
+    else return hasCustomer.id;
+  }
+
   async createCustomer(id: string, name: string, phone: string) {
     await this.prisma.customer.create({
       data: {

@@ -1,7 +1,17 @@
-import { Controller, Delete, Get, Param, Res, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Res,
+  UseGuards
+} from "@nestjs/common";
 import type { Response } from "express";
 import { JwtAuthGuard } from "src/auth/jwt.guard";
 import { ChatService } from "./chat.service";
+import { AttendantStartDto } from "./dto/attendantStart";
 
 @Controller("chat")
 export class ChatController {
@@ -15,6 +25,23 @@ export class ChatController {
       return res.status(200).send(chat);
     } catch (e) {
       return res.status(500).send({ msgs: "Erro no servidor." });
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("attendant/start")
+  async attendantStart(@Body() data: AttendantStartDto, @Res() res: Response) {
+    try {
+      const chat = await this.chatService.attendantStartChat(
+        data.customerPhone,
+        data.contactReason,
+        data.message,
+        data.businessName,
+        data.customerName ? data.customerName : "Nome não informado"
+      );
+      return res.status(201).send({ id: chat });
+    } catch (e) {
+      return res.status(500).send({ msg: "Erro no servidor." });
     }
   }
 

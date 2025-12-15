@@ -1,8 +1,11 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { Chat, ContactReason, Steps } from "@prisma/client";
+import { randomUUID } from "crypto";
 import { ChatRepository } from "src/repositories/chat.repository";
 import { PrismaService } from "src/shared/lib/prisma/prisma.service";
+import { sendTextMessage } from "src/shared/utils/sendTextMessage";
 import { BusinessService } from "../business/business.service";
+import { CustomerService } from "../customer/customer.service";
 import { ChatGateway } from "./chat.gateway";
 
 @Injectable()
@@ -10,7 +13,8 @@ export class ChatService extends ChatRepository {
   constructor(
     private readonly prisma: PrismaService,
     private readonly businessService: BusinessService,
-    private readonly chatGateway: ChatGateway
+    private readonly chatGateway: ChatGateway,
+    private readonly customerService: CustomerService
   ) {
     super();
   }
@@ -33,6 +37,15 @@ export class ChatService extends ChatRepository {
   }
 
   async create(customerId: string) {
+    const findChat = await this.prisma.chat.findFirst({
+      where: { customerId, isActive: true }
+    });
+
+    if (findChat)
+      throw new UnauthorizedException(
+        "Você já tem um chat aberto com esse usuário."
+      );
+
     const chat = await this.prisma.chat.create({
       data: {
         customerId,
@@ -113,5 +126,74 @@ export class ChatService extends ChatRepository {
         }
       }
     });
+  }
+
+  async attendantStartChat(
+    customerPhone: string,
+    contactReason: ContactReason,
+    message: string,
+    businessName: string,
+    customerName?: string
+  ): Promise<string | null> {
+    const chatId = randomUUID();
+    const newChat = async (customerId: string) => {
+      const business = await this.businessService.findByName(businessName);
+
+      const findChat = await this.prisma.chat.findFirst({
+        where: { customerId, isActive: true }
+      });
+
+      if (findChat)
+        throw new UnauthorizedException(
+          "Você já tem um chat aberto com esse usuário."
+        );
+
+      if (!business)
+        throw new UnauthorizedException("Negócio informado não existe.");
+      await this.prisma.chat.create({
+        data: {
+          customer: {
+            connect: { id: customerId }
+          },
+          business: {
+            connect: { id: business.id }
+          },
+          id: chatId,
+          contactReason,
+          currentStep: Steps.attendant,
+          isActive: true,
+          messages: {
+            create: {
+              content: message,
+              sender: "AGENT"
+            }
+          }
+        }
+      });
+    };
+
+    try {
+      const findCustomer =
+        await this.customerService.findCustomerByPhone(customerPhone);
+
+      if (!findCustomer) {
+        const customerId = randomUUID();
+        await this.customerService.createCustomer(
+          customerId,
+          customerName ? customerName : "Nome não informado",
+          customerPhone
+        );
+
+        await newChat(customerId);
+      } else await newChat(findCustomer);
+      const chatPayload = await this.getChatPayload(chatId);
+      sendTextMessage(customerPhone, message);
+
+      this.chatGateway.emitNewTicket(chatPayload);
+      return chatId;
+    } catch (e) {
+      console.log(e);
+      throw new UnauthorizedException("Não foi possível iniciar o chat.");
+    }
   }
 }

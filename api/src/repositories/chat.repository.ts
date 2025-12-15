@@ -17,4 +17,11 @@ export abstract class ChatRepository {
   ): Promise<void>;
   abstract findChatAttendant(): Promise<Chat[] | null>;
   abstract getChatPayload(chatId: string): Promise<any>;
+  abstract attendantStartChat(
+    customerPhone: string,
+    customerName: string,
+    message: string,
+    contactReason: ContactReason,
+    businessName: string
+  ): Promise<string | null>;
 }

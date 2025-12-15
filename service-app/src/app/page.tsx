@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import ChatCard from "@/components/chat/chatCard";
 import { DialogFinish } from "@/components/chat/dialogFinish";
+import { DialogNewChat } from "@/components/chat/dialogNewChat";
 import MessageBubble from "@/components/chat/message";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +14,7 @@ import { sendMessage } from "@/lib/sendMessage";
 import { ArrowLeft, Send } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "react-toastify";
 import { io } from "socket.io-client";
 import { ITicket } from "../interface/ITicket";
 
@@ -66,8 +69,8 @@ export default function Home() {
       try {
         const data = await getProblemsData();
         if (data.data) setTickets(data.data);
-      } catch (error) {
-        console.error("Error fetching data:", error);
+      } catch (e) {
+        toast.error("Erro ao carregar data");
       }
     };
     fetchData();
@@ -78,14 +81,8 @@ export default function Home() {
     if (socket) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const handleNewMessage = (payload: any) => {
-        const currentTickets = ticketsRef.current;
-
         const rawMessage = payload.message || payload;
         const targetChatId = payload.chatId || rawMessage.chatId;
-
-        if (!currentTickets || currentTickets.length === 0) {
-          console.warn("⚠️ Nenhum ticket carregado no estado atual ainda.");
-        }
 
         setTickets(prevTickets => {
           return prevTickets.map(ticket => {
@@ -139,6 +136,10 @@ export default function Home() {
     }
   }, [socket, setTickets]);
 
+  const handleChatCreated = (newTicket: string) => {
+    setSelectedChatId(newTicket);
+  };
+
   const handleSendMessage = async () => {
     setMessageInput("");
 
@@ -162,8 +163,13 @@ export default function Home() {
           selectedChatId ? "hidden" : "block"
         } md:block md:col-span-3 overflow-y-auto`}
       >
-        <div className="p-4 space-y-4">
-          <h1 className="text-4xl text-slate-900 font-bold">Conversas</h1>
+        <div className="p-4 space-y-1">
+          <div className="flex items-center justify-between mb-6">
+            <DialogNewChat onChatCreated={handleChatCreated} />
+            <p className="text-md space-y-4 text-gray-700 font-medium ">
+              {tickets.length} tickets abertos
+            </p>
+          </div>
           {tickets.map(ticket => (
             <div key={ticket.id} onClick={() => setSelectedChatId(ticket.id)}>
               <ChatCard
