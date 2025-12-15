@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { finishChat } from "@/lib/finishChat";
 import { toast } from "react-toastify";
 
-export function DialogFinish({ id }: { id: string }) {
+export function DialogFinish({ id, token }: { id: string; token: string }) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
@@ -34,7 +34,7 @@ export function DialogFinish({ id }: { id: string }) {
           <AlertDialogAction
             className="bg-red-500 hover:bg-red-900 cursor-pointer"
             onClick={async () => {
-              await finishChat(id);
+              await finishChat(id, token);
               toast.success("Chat finalizado com sucesso.");
             }}
           >

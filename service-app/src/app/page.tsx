@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import ChatCard from "@/components/chat/chatCard";
@@ -8,11 +7,13 @@ import MessageBubble from "@/components/chat/message";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { getProblemsData } from "@/lib/getProblemsData";
+import { getTickets } from "@/lib/getTickets";
 import { logoMap } from "@/lib/logoMap";
 import { sendMessage } from "@/lib/sendMessage";
 import { ArrowLeft, Send } from "lucide-react";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { io } from "socket.io-client";
@@ -24,6 +25,16 @@ export default function Home() {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [tickets, setTickets] = useState<Array<ITicket>>([]);
   const [messageInput, setMessageInput] = useState<string>("");
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+      toast.error("Você deve fazer login.");
+    }
+  }, [status, router]);
+
   const socket = useMemo(
     () =>
       io(SOCKET_URL, {
@@ -66,15 +77,18 @@ export default function Home() {
   // Fetch tickets data
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const data = await getProblemsData();
-        if (data.data) setTickets(data.data);
-      } catch (e) {
-        toast.error("Erro ao carregar data");
+      if (status === "authenticated" && session?.user.accessToken) {
+        try {
+          const data = await getTickets(session.user.accessToken);
+          if (data.data) setTickets(data.data);
+        } catch (e) {
+          console.log(e);
+          toast.error("Erro ao carregar data");
+        }
       }
     };
     fetchData();
-  }, []);
+  }, [status, session]);
 
   // Socket event listeners
   useEffect(() => {
@@ -142,12 +156,13 @@ export default function Home() {
 
   const handleSendMessage = async () => {
     setMessageInput("");
-
-    await sendMessage(
-      selectedChatId!,
-      messageInput,
-      selectedChat!.customer.phone
-    );
+    if (status === "authenticated" && session.user.accessToken)
+      await sendMessage(
+        selectedChatId!,
+        messageInput,
+        selectedChat!.customer.phone,
+        session.user.accessToken
+      );
   };
 
   const handleKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -165,7 +180,10 @@ export default function Home() {
       >
         <div className="p-4 space-y-1">
           <div className="flex items-center justify-between mb-6">
-            <DialogNewChat onChatCreated={handleChatCreated} />
+            <DialogNewChat
+              onChatCreated={handleChatCreated}
+              token={session?.user.accessToken ? session.user.accessToken : ""}
+            />
             <p className="text-md space-y-4 text-gray-700 font-medium ">
               {tickets.length} tickets abertos
             </p>
@@ -219,7 +237,12 @@ export default function Home() {
                   {selectedChat.customer.name}
                 </h2>
               </div>
-              <DialogFinish id={selectedChat.id} />
+              <DialogFinish
+                id={selectedChat.id}
+                token={
+                  session?.user.accessToken ? session.user.accessToken : ""
+                }
+              />
             </div>
 
             <ScrollArea className="h-[calc(100vh-148px)]">

@@ -54,9 +54,10 @@ const mockReasons = [
 
 interface DialogNewChatProps {
   onChatCreated?: (ticket: string) => void;
+  token: string;
 }
 
-export function DialogNewChat({ onChatCreated }: DialogNewChatProps) {
+export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,8 +79,10 @@ export function DialogNewChat({ onChatCreated }: DialogNewChatProps) {
     try {
       setIsLoading(true);
       const businessIdentifier = data.business;
+      console.log(token);
 
       const response = await startChat(
+        token,
         data.phone,
         data.contactReason,
         data.message,
