@@ -19,7 +19,7 @@ import { toast } from "react-toastify";
 import { io } from "socket.io-client";
 import { ITicket } from "../interface/ITicket";
 
-const SOCKET_URL = "http://localhost:3000";
+const SOCKET_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export default function Home() {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);

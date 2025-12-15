@@ -8,16 +8,19 @@ export const login = async (
   name: string,
   password: string
 ): Promise<Response> => {
-  const response = await fetch(`http://localhost:3000/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      name: name,
-      password
-    })
-  });
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: name,
+        password
+      })
+    }
+  );
 
   const res = await response.json();
 

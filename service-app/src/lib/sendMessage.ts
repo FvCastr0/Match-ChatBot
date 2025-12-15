@@ -12,18 +12,21 @@ export const sendMessage = async (
   token: string
 ): Promise<Response> => {
   try {
-    const response = await fetch(`http://localhost:3000/message/attendant`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        chatId,
-        content: message,
-        phone
-      })
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/message/attendant`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          chatId,
+          content: message,
+          phone
+        })
+      }
+    );
 
     if (!response.ok) {
       console.error("Erro API:", response.status, response.statusText);

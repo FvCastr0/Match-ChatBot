@@ -1,4 +1,3 @@
-// src/queue/worker.processor.ts
 import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { Job } from "bullmq";
 import { StepHandlerFactory } from "src/queue/step-handler-factory";

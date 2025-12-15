@@ -12,20 +12,23 @@ export const startChat = async (
   customerName: string
 ): Promise<Response> => {
   try {
-    const response = await fetch(`http://localhost:3000/chat/attendant/start`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        customerPhone,
-        contactReason,
-        message,
-        businessName,
-        customerName
-      })
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/chat/attendant/start`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          customerPhone,
+          contactReason,
+          message,
+          businessName,
+          customerName
+        })
+      }
+    );
 
     const ticket = await response.json();
 

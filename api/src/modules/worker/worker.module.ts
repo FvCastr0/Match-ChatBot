@@ -1,4 +1,5 @@
 import { BullModule } from "@nestjs/bullmq";
+import { CacheModule } from "@nestjs/cache-manager";
 import { Module } from "@nestjs/common";
 import { QueueModule } from "src/queue/queue.module";
 import { ChatModule } from "../chat/chat.module";
@@ -14,7 +15,8 @@ import { WorkerProcessor } from "./worker.processor";
     QueueModule,
     MessageModule,
     CustomerModule,
-    ChatModule
+    ChatModule,
+    CacheModule.register()
   ],
   providers: [WorkerProcessor],
   exports: [WorkerModule]
