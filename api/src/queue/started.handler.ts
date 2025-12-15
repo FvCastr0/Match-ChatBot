@@ -36,7 +36,7 @@ export class StartedHandler implements StepHandler {
     if (!business) {
       await sendTextMessage(
         dataMsg.phone,
-        "Você deve selecionar uma das três empresas ou digitar o nome delas."
+        "Você deve selecionar ou digitar o nome da empresa que você quer falar."
       );
 
       await this.messageService.createMessage(

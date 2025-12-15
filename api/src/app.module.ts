@@ -3,6 +3,7 @@ import { ConfigModule } from "@nestjs/config";
 
 import { BullModule } from "@nestjs/bullmq";
 import { CacheModule } from "@nestjs/cache-manager";
+import { ScheduleModule } from "@nestjs/schedule";
 import * as redisStore from "cache-manager-redis-store";
 import { AuthModule } from "./auth/auth.module";
 import { ChatModule } from "./modules/chat/chat.module";
@@ -32,6 +33,8 @@ import { PrismaModule } from "./shared/lib/prisma/prisma.module";
       port: process.env.REDIS_PORT || 6379,
       ttl: 600
     }),
+
+    ScheduleModule.forRoot(),
     WebhookModule,
     CustomerModule,
     PrismaModule,

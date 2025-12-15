@@ -79,7 +79,10 @@ export class ContactReasonHandler implements StepHandler {
       const business = await this.businessService.findById(chat.businessId);
 
       if (business === null) {
-        await sendTextMessage(dataMsg.phone, "Empresa não foi encontrada");
+        await sendTextMessage(
+          dataMsg.phone,
+          "Você deve digitar uma empresa que é referente a este número"
+        );
 
         await this.messageService.createMessage(
           chat.id,
@@ -145,7 +148,7 @@ export class ContactReasonHandler implements StepHandler {
 
     await sendTextMessage(
       dataMsg.phone,
-      "Você deve selecionar um dos três motivos para continuar seu atendimento."
+      "Para continuar o seu atendimento, digite por qual motivo você entrou em contato. (Problema, Fazer um pedido ou Feedback)"
     );
   }
 }
