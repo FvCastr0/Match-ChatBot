@@ -22,8 +22,8 @@ import {
   PopoverContent,
   PopoverTrigger
 } from "@/components/ui/popover";
-import { startChat } from "@/lib/attendantStartChat";
 import { cn } from "@/lib/utils";
+import { startChat } from "@/services/attendantStartChat";
 import { AlertDialogTitle } from "@radix-ui/react-alert-dialog";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import Image from "next/image";

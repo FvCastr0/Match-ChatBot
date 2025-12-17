@@ -1,14 +1,20 @@
-enum sender {
-  CUSTOMER = "CUSTOMER",
-  BOT = "BOT",
-  attendant = "ATTENDANT"
+export enum sender {
+  customer = "customer",
+  bot = "bot",
+  agent = "agent"
 }
 
 export interface ITicket {
   business: { id: string; name: string };
   businessId: string;
-  customerId: "1212857547420625";
-  id: "cmj1kykh8000bxowfim0s01gy";
+  customerId: string;
+  id: string;
+  closedAt: Date;
+  createdAt: Date;
+  contactReason: string;
+  currentStep: string;
+  startedBy: string;
+  status: string;
   customer: { id: string; name: string; phone: string };
   messages: {
     id: string;

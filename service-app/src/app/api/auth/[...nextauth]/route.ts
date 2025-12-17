@@ -1,16 +1,13 @@
-import { login } from "@/lib/login";
+import { login } from "@/services/login";
 import NextAuth, { NextAuthOptions } from "next-auth";
 import { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 declare module "next-auth" {
   interface Session {
-    accessToken?: string;
     user: {
       accessToken?: string;
       name?: string | null;
-      email?: string | null;
-      image?: string | null;
     };
   }
 }

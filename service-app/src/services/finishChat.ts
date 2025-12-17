@@ -9,7 +9,7 @@ export const finishChat = async (
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_BACKEND_URL}/chat/finish/${id}`,
     {
-      method: "DELETE",
+      method: "PATCH",
       headers: {
         Authorization: `Bearer ${token}`
       }

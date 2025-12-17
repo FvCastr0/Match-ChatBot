@@ -10,7 +10,7 @@ import {
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { finishChat } from "@/lib/finishChat";
+import { finishChat } from "@/services/finishChat";
 import { toast } from "react-toastify";
 
 export function DialogFinish({ id, token }: { id: string; token: string }) {
