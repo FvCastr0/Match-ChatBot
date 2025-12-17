@@ -28,6 +28,9 @@ export class StartedHandler implements StepHandler {
       return;
     }
 
+    const activeChat = await this.chatService.findAndIsActive(chat.customerId);
+    if (activeChat?.status !== "open") return;
+
     await this.messageService.createMessage(chat.id, dataMsg.msg, "CUSTOMER");
     const businessName = detectCategory(dataMsg.msg, this.companyKeywords);
 

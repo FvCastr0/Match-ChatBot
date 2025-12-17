@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { Chat, ContactReason, Steps } from "@prisma/client";
+import { Chat, ChatStatus, ContactReason, Steps } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { ChatRepository } from "src/repositories/chat.repository";
 import { PrismaService } from "src/shared/lib/prisma/prisma.service";
@@ -21,8 +21,8 @@ export class ChatService extends ChatRepository {
   }
   async findAndIsActive(customerId: string) {
     const chat = await this.prisma.chat.findFirst({
-      where: { isActive: true, customerId },
-      select: { isActive: true, id: true }
+      where: { status: ChatStatus.open, customerId },
+      select: { status: true, id: true }
     });
 
     if (chat !== null) return chat;
@@ -37,22 +37,34 @@ export class ChatService extends ChatRepository {
     return chatData;
   }
 
+  async findAll() {
+    const chatData = await this.prisma.chat.findMany({
+      include: {
+        business: true,
+        customer: true,
+        messages: true
+      }
+    });
+
+    return chatData;
+  }
+
   async create(customerId: string) {
     const findChat = await this.prisma.chat.findFirst({
-      where: { customerId, isActive: true }
+      where: { customerId, status: ChatStatus.open }
     });
 
     if (findChat)
       throw new UnauthorizedException(
-        "Você já tem um chat aberto com esse usuário."
+        "Já existe um chat aberto com esse usuário."
       );
 
     const chat = await this.prisma.chat.create({
       data: {
         customerId,
         currentStep: Steps.started,
-        isActive: true,
-        startedBy: "AGENT"
+        status: ChatStatus.open,
+        startedBy: "CUSTOMER"
       }
     });
     return chat;
@@ -81,18 +93,16 @@ export class ChatService extends ChatRepository {
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async finishAllChats() {
     await this.prisma.chat.updateMany({
-      where: { isActive: true },
-      data: { isActive: false, closedAt: new Date(), currentStep: "unfinished" }
+      where: { status: ChatStatus.open },
+      data: { closedAt: new Date(), status: ChatStatus.unfinished }
     });
   }
 
   async finishChat(id: string): Promise<void> {
     const updatedTicket = await this.prisma.chat.update({
       where: { id },
-      data: { isActive: false, closedAt: new Date() }
+      data: { status: ChatStatus.finished, closedAt: new Date() }
     });
-
-    await this.updateStep(id, "finished");
 
     this.chatGateway.server.emit("ticketClosed", {
       ticketId: updatedTicket.id
@@ -110,7 +120,8 @@ export class ChatService extends ChatRepository {
     try {
       const chat = await this.prisma.chat.findMany({
         where: {
-          currentStep: "attendant"
+          currentStep: "attendant",
+          status: ChatStatus.open
         },
         include: {
           business: true,
@@ -150,7 +161,7 @@ export class ChatService extends ChatRepository {
       const business = await this.businessService.findByName(businessName);
 
       const findChat = await this.prisma.chat.findFirst({
-        where: { customerId, isActive: true }
+        where: { customerId, status: ChatStatus.open }
       });
 
       if (findChat)
@@ -171,7 +182,7 @@ export class ChatService extends ChatRepository {
           id: chatId,
           contactReason,
           currentStep: Steps.attendant,
-          isActive: true,
+          status: ChatStatus.open,
           messages: {
             create: {
               content: message,

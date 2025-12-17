@@ -20,6 +20,9 @@ export class AttendantHandler implements StepHandler {
       return;
     }
 
+    const activeChat = await this.chatService.findAndIsActive(chat.customerId);
+    if (activeChat?.status !== "open") return;
+
     await this.messageService.createMessage(chat.id, dataMsg.msg, "CUSTOMER");
   }
 }

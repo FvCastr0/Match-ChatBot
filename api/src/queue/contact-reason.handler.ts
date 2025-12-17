@@ -37,7 +37,8 @@ export class ContactReasonHandler implements StepHandler {
       "sugestão",
       "reclamação",
       "elogio",
-      "comentário"
+      "comentário",
+      "feedback"
     ],
 
     problem: [
@@ -69,6 +70,9 @@ export class ContactReasonHandler implements StepHandler {
     if (!chat) {
       return;
     }
+
+    const activeChat = await this.chatService.findAndIsActive(chat.customerId);
+    if (activeChat?.status !== "open") return;
 
     await this.messageService.createMessage(chat.id, dataMsg.msg, "CUSTOMER");
 
@@ -131,10 +135,15 @@ export class ContactReasonHandler implements StepHandler {
     }
 
     if (category === "problem") {
-      await sendMessageWithTemplate(dataMsg.phone, "problem");
+      await sendTextMessage(
+        dataMsg.phone,
+        `*Poxa*, sentimos muito que algo não saiu como você esperava 😔
+
+Diga para nós de uma forma breve qual problema está acontecendo para você ser direcionado da melhor forma possível 🙏`
+      );
       await this.messageService.createMessage(
         chat.id,
-        "Mensagem reportar problema",
+        "Qual problema você está tendo?",
         "BOT"
       );
       await this.chatService.updateContactReason(chat.id, "problem");

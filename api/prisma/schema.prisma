@@ -13,6 +13,7 @@ enum SenderType {
 }
 
 enum Steps {
+  started
   business_redirect
   contact_reason
   place_order_pizza
@@ -20,9 +21,6 @@ enum Steps {
   place_order_fihass
   report_problem
   attendant
-  finished
-  started
-  unfinished
 }
 
 enum ContactReason {
@@ -34,6 +32,12 @@ enum ContactReason {
 enum Roles {
   manager
   attendant
+}
+
+enum ChatStatus {
+  open
+  finished
+  unfinished
 }
 
 model Business {
@@ -62,8 +66,6 @@ model Chat {
   customerId String
   customer   Customer @relation(fields: [customerId], references: [id])
 
-  isActive Boolean @default(true)
-
   currentStep Steps
 
   updatedAt DateTime @updatedAt
@@ -73,6 +75,8 @@ model Chat {
   businessId String?
 
   contactReason ContactReason?
+
+  status ChatStatus
 
   messages Message[]
 

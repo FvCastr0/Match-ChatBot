@@ -1,9 +1,9 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Param,
+  Patch,
   Post,
   Res,
   UseGuards
@@ -16,6 +16,17 @@ import { AttendantStartDto } from "./dto/attendantStart";
 @Controller("chat")
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
+
+  @UseGuards(JwtAuthGuard)
+  @Get("")
+  async findAllChats(@Res() res: Response) {
+    try {
+      const chat = await this.chatService.findAll();
+      return res.status(200).send(chat);
+    } catch (e) {
+      return res.status(500).send({ msgs: "Erro no servidor." });
+    }
+  }
 
   @UseGuards(JwtAuthGuard)
   @Get("problems")
@@ -46,10 +57,11 @@ export class ChatController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete("finish/:id")
+  @Patch("finish/:id")
   async finishChat(@Param("id") id: string, @Res() res: Response) {
     try {
       await this.chatService.finishChat(id);
+
       return res.status(200).send({ msg: "Chat finalizado com sucesso." });
     } catch (e) {
       return res.status(500).send({ msg: "Erro no servidor." });

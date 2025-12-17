@@ -1,6 +1,6 @@
 import { Chat, ContactReason, Steps } from "@prisma/client";
 
-type ChatWithActiveAndId = Pick<Chat, "isActive" | "id">;
+type ChatWithActiveAndId = Pick<Chat, "status" | "id">;
 
 export abstract class ChatRepository {
   abstract findAndIsActive(

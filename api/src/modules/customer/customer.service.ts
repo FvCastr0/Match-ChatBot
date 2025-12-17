@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { Customer } from "@prisma/client";
 import { CustomerRepository } from "src/repositories/customer.repository";
 import { PrismaService } from "src/shared/lib/prisma/prisma.service";
 
@@ -22,6 +23,14 @@ export class CustomerService extends CustomerRepository {
 
     if (hasCustomer === null) return null;
     else return hasCustomer.id;
+  }
+
+  async findAllCustomers(): Promise<Customer[]> {
+    return await this.prisma.customer.findMany({
+      include: {
+        chats: true
+      }
+    });
   }
 
   async createCustomer(id: string, name: string, phone: string) {
