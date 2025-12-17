@@ -1,7 +1,5 @@
 "use client";
 
-import PieChartVariable from "@/components/charts/pie";
-import { RadarChartLines } from "@/components/charts/radar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +15,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
@@ -50,13 +49,32 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  PolarAngleAxis,
+  PolarGrid,
+  Radar,
+  RadarChart,
+  XAxis
+} from "recharts";
 
 enum SelectCompanies {
-  general,
-  match_pizza,
-  smatch_burger,
-  fihass
+  general = "general",
+  match_pizza = "match_pizza",
+  smatch_burger = "smatch_burger",
+  fihass = "fihass"
+}
+
+enum steps {
+  started = "Iniciou",
+  business_redirect = "Redirecionamento de empresa",
+  contact_reason = "Motivo do contato",
+  report_problem = "Reportar problema",
+  attendant = "Contato atendente"
 }
 
 type DateFilter = "today" | "7days" | "30days" | "always" | "custom";
@@ -64,7 +82,6 @@ type DateFilter = "today" | "7days" | "30days" | "always" | "custom";
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [personalizedData, setPersonalizedData] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const [selectedBusiness, setSelectedBusiness] = useState<SelectCompanies>(
@@ -73,11 +90,48 @@ export default function Dashboard() {
 
   const [dateFilter, setDateFilter] = useState<DateFilter>("7days");
 
+  console.log(dateFilter);
+
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
 
   const [customers, setCustomers] = useState<Customers[]>([]);
   const [chats, setChats] = useState<ITicket[]>([]);
+
+  const selfServiceChartConfig = {
+    name: {
+      label: "Chats"
+    },
+    order: {
+      label: "Pedidos"
+    },
+    feedback: {
+      label: "Feedbacks"
+    }
+  } satisfies ChartConfig;
+
+  const startedChartConfig = {
+    startedBy: {
+      label: "Conversas iniciadas"
+    },
+    agent: {
+      label: "Atendente"
+    },
+    customer: {
+      label: "Cliente"
+    }
+  } satisfies ChartConfig;
+
+  const chartContactReasonConfig = {
+    agent: {
+      label: "Atendente",
+      color: "var(--chart-1)"
+    },
+    customer: {
+      label: "Cliente",
+      color: "var(--chart-2)"
+    }
+  } satisfies ChartConfig;
 
   const lineChartConfig = {
     messages: {
@@ -227,7 +281,58 @@ export default function Dashboard() {
     [groupedMessages]
   );
 
-  console.log(groupedMessages);
+  const selfServiceChartData = useMemo(() => {
+    const orders = filteredChats.filter(
+      chat => chat.contactReason === "order"
+    ).length;
+    const problems = filteredChats.filter(
+      chat => chat.contactReason === "problem"
+    ).length;
+    return [
+      { reason: "order", name: orders, fill: "#1447E6" },
+      { reason: "feedback", name: problems, fill: "#155DFC" }
+    ];
+  }, [filteredChats]);
+
+  const startedChartData = useMemo(() => {
+    const agent = filteredChats.filter(
+      chat => chat.startedBy === "AGENT"
+    ).length;
+    const customer = filteredChats.filter(
+      chat => chat.startedBy === "CUSTOMER"
+    ).length;
+    return [
+      { startedBy: "agent", quantity: agent, fill: "#e69214" },
+      { startedBy: "customer", quantity: customer, fill: "#5e3b06" }
+    ];
+  }, [filteredChats]);
+
+  const contactReasonChartData = useMemo(() => {
+    const findData = (startedBy: string, contactReason: string) => {
+      return filteredChats.filter(
+        chat =>
+          chat.startedBy === startedBy && chat.contactReason === contactReason
+      ).length;
+    };
+
+    return [
+      {
+        month: "Pedido",
+        agent: findData("AGENT", "order"),
+        customer: findData("CUSTOMER", "order")
+      },
+      {
+        month: "Problema",
+        agent: findData("AGENT", "problem"),
+        customer: findData("CUSTOMER", "problem")
+      },
+      {
+        month: "Feedback",
+        agent: findData("AGENT", "feedback"),
+        customer: findData("CUSTOMER", "feedback")
+      }
+    ];
+  }, [filteredChats]);
 
   return (
     <div>
@@ -281,13 +386,119 @@ export default function Dashboard() {
               title="Média de duração das conversas"
               value={`${Math.round(averageChatDuration / 1000 / 60)} minutos`}
             />
-            <Kpi
-              title="Chats que não foram finalizados"
-              value={
-                filteredChats.filter(chat => chat.status === "unfinished")
-                  .length
-              }
-            />
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>
+                  Chats não finalizados / abertos
+                </CardDescription>
+
+                <CardTitle className="text-2xl">
+                  {
+                    filteredChats.filter(chat => chat.status === "unfinished")
+                      .length
+                  }
+                </CardTitle>
+              </CardHeader>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="mx-1 sm:mx-5 cursor-pointer"
+                  >
+                    Verificar conversas
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="w-full max-w-none sm:max-w-5xl ">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Conversas</AlertDialogTitle>
+                    <AlertDialogDescription className="text-sm text-muted-foreground">
+                      Tabela com as conversas não finalizadas ou abertas
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <div className="h-[350px] overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Iniciado</TableHead>
+                          <TableHead>Telefone</TableHead>
+                          <TableHead>Etapa</TableHead>
+                          <TableHead>Histórico</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {chats
+                          .filter(
+                            chat =>
+                              chat.status !== "finished" &&
+                              chat.currentStep !== "attendant"
+                          )
+                          .map(chat => (
+                            <TableRow key={chat.id}>
+                              <TableCell className="font-medium">
+                                {chat.startedBy === "CUSTOMER"
+                                  ? "Cliente"
+                                  : "Atendente"}
+                              </TableCell>
+                              <TableCell>{chat.customer.phone}</TableCell>
+                              <TableCell>
+                                {(chat.currentStep = steps.attendant)}
+                              </TableCell>
+                              <TableCell>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant={"outline"}
+                                      className="cursor-pointer"
+                                    >
+                                      Vizualizar
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>
+                                        Telefone do cliente:{" "}
+                                        {chat.customer.phone}
+                                      </AlertDialogTitle>
+                                    </AlertDialogHeader>
+                                    <div className="flex flex-col max-h-[400px] overflow-y-auto">
+                                      {chat.messages.map(message => (
+                                        <div
+                                          key={message.id}
+                                          className={`${
+                                            message.sender === "CUSTOMER"
+                                              ? "self-start bg-amber-400 px-2 py-1 rounded-md"
+                                              : "self-end bg-amber-600 px-2 py-1 rounded-md"
+                                          }`}
+                                        >
+                                          <p key={message.id}>
+                                            {message.content}
+                                          </p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <AlertDialogFooter>
+                                      <AlertDialogAction className="cursor-pointer">
+                                        Voltar
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <AlertDialogFooter>
+                    <AlertDialogAction className="cursor-pointer bg-red-500 hover:bg-red-900">
+                      Fechar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </Card>
+
             <Card>
               <CardHeader className="pb-2">
                 <CardDescription>Quantidade de clientes</CardDescription>
@@ -349,14 +560,29 @@ export default function Dashboard() {
           <section className="grid grid-cols-12 gap-6 items-start">
             <div className="col-span-12 lg:col-span-4 space-y-6">
               <Card>
-                <CardContent className="flex flex-wrap gap-2 justify-around">
-                  <Badge variant="outline" className="cursor-pointer">
+                <CardContent className="flex flex-wrap gap-2 justify-around ">
+                  <Badge
+                    variant="outline"
+                    className={`cursor-pointer transition-all ${
+                      selectedBusiness === SelectCompanies.general
+                        ? "bg-red-400 text-white"
+                        : ""
+                    }`}
+                    onClick={() => setSelectedBusiness(SelectCompanies.general)}
+                  >
                     Geral
                   </Badge>
 
                   <Badge
                     variant="outline"
-                    className="flex gap-1 items-center cursor-pointer"
+                    className={`cursor-pointer flex gap-1 items-center transition-all ${
+                      selectedBusiness === SelectCompanies.match_pizza
+                        ? "bg-red-400 text-white"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setSelectedBusiness(SelectCompanies.match_pizza)
+                    }
                   >
                     <Image
                       src="/imgs/logos/match.png"
@@ -369,7 +595,14 @@ export default function Dashboard() {
 
                   <Badge
                     variant="outline"
-                    className="flex gap-1 items-center cursor-pointer"
+                    className={`cursor-pointer flex gap-1 items-center transition-all ${
+                      selectedBusiness === SelectCompanies.smatch_burger
+                        ? "bg-red-400 text-white"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setSelectedBusiness(SelectCompanies.smatch_burger)
+                    }
                   >
                     <Image
                       src="/imgs/logos/smatch.png"
@@ -382,7 +615,12 @@ export default function Dashboard() {
 
                   <Badge
                     variant="outline"
-                    className="flex gap-1 items-center cursor-pointer"
+                    className={`cursor-pointer flex gap-1 items-center transition-all ${
+                      selectedBusiness === SelectCompanies.fihass
+                        ? "bg-red-400 text-white"
+                        : ""
+                    }`}
+                    onClick={() => setSelectedBusiness(SelectCompanies.fihass)}
                   >
                     <Image
                       src="/imgs/logos/fihass.png"
@@ -404,7 +642,7 @@ export default function Dashboard() {
                 </CardHeader>
 
                 <CardContent className="space-y-4">
-                  {!personalizedData ? (
+                  {dateFilter !== "custom" ? (
                     <RadioGroup
                       value={dateFilter}
                       onValueChange={value =>
@@ -440,15 +678,52 @@ export default function Dashboard() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPersonalizedData(!personalizedData)}
+                    onClick={() => setDateFilter("custom")}
                   >
-                    {personalizedData
+                    {dateFilter !== "custom"
                       ? "Usar período rápido"
                       : "Data personalizada"}
                   </Button>
                 </CardContent>
               </Card>
-              <RadarChartLines />
+
+              <Card>
+                <CardHeader className="items-center ">
+                  <CardTitle>Motivos de contato</CardTitle>
+                  <CardDescription>
+                    Mostrando a relação entre motivo de contato e conversas
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pb-0">
+                  <ChartContainer
+                    config={chartContactReasonConfig}
+                    className="mx-auto aspect-square max-h-[350px]"
+                  >
+                    <RadarChart data={contactReasonChartData}>
+                      <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent indicator="line" />}
+                      />
+                      <PolarAngleAxis dataKey="month" />
+                      <PolarGrid radialLines={false} />
+                      <Radar
+                        dataKey="agent"
+                        fill="orange"
+                        fillOpacity={0}
+                        stroke="orange"
+                        strokeWidth={2}
+                      />
+                      <Radar
+                        dataKey="customer"
+                        fill="green"
+                        fillOpacity={0}
+                        stroke="green"
+                        strokeWidth={2}
+                      />
+                    </RadarChart>
+                  </ChartContainer>
+                </CardContent>
+              </Card>
             </div>
 
             <div className="col-span-12 lg:col-span-8 space-y-6">
@@ -456,9 +731,9 @@ export default function Dashboard() {
                 <Card className="py-4 sm:py-0">
                   <CardHeader className="flex flex-col items-stretch border-b p-0 sm:flex-row">
                     <div className="flex flex-1 flex-col justify-center gap-1 px-6 pb-3 sm:pb-0">
-                      <CardTitle>Line Chart - Interactive</CardTitle>
+                      <CardTitle>Mensagens</CardTitle>
                       <CardDescription>
-                        Showing total visitors for the last 3 months
+                        Mostra um gráfico que representa o total de mensagens
                       </CardDescription>
                     </div>
                     <div className="flex">
@@ -482,6 +757,7 @@ export default function Dashboard() {
                       })}
                     </div>
                   </CardHeader>
+
                   <CardContent className="px-2 sm:p-6">
                     <ChartContainer
                       config={lineChartConfig}
@@ -541,11 +817,86 @@ export default function Dashboard() {
 
               <div className="flex gap-4 flex-col sm:flex-row">
                 <div className="col-span-12 lg:col-span-4">
-                  <PieChartVariable />
+                  <Card className="h-full ">
+                    <CardHeader>
+                      <CardTitle>
+                        Taxa de autoatendimento
+                        <span className="ml-2 text-sm text-muted-foreground">
+                          {(
+                            (filteredChats.filter(
+                              chat => chat.contactReason !== "problem"
+                            ).length *
+                              100) /
+                            filteredChats.length
+                          ).toFixed(2)}
+                          %
+                        </span>
+                      </CardTitle>
+                      <CardDescription>
+                        Comparativo entre atendimento humano e automático
+                      </CardDescription>
+                    </CardHeader>
+
+                    <CardContent>
+                      <ChartContainer
+                        config={selfServiceChartConfig}
+                        className="mx-auto aspect-square max-h-80"
+                      >
+                        <PieChart>
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent hideLabel />}
+                          />
+                          <Pie
+                            data={selfServiceChartData}
+                            dataKey="name"
+                            nameKey="reason"
+                          />
+                        </PieChart>
+                      </ChartContainer>
+                    </CardContent>
+
+                    <CardFooter className="text-sm text-muted-foreground">
+                      Quanto maior o autoatendimento, menor a necessidade de
+                      intervenção humana.
+                    </CardFooter>
+                  </Card>
                 </div>
 
                 <div className="col-span-12 lg:col-span-4">
-                  <PieChartVariable />
+                  <Card className="h-full">
+                    <CardHeader>
+                      <CardTitle>Conversas iniciadas</CardTitle>
+                      <CardDescription>
+                        Comparativo entre conversas iniciadas por clientes e
+                        atendente
+                      </CardDescription>
+                    </CardHeader>
+
+                    <CardContent>
+                      <ChartContainer
+                        config={startedChartConfig}
+                        className="mx-auto aspect-square max-h-80"
+                      >
+                        <PieChart>
+                          <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent hideLabel />}
+                          />
+                          <Pie
+                            data={startedChartData}
+                            dataKey="quantity"
+                            nameKey="startedBy"
+                          />
+                        </PieChart>
+                      </ChartContainer>
+                    </CardContent>
+
+                    <CardFooter className="text-sm text-muted-foreground">
+                      Quanto maior no número de clientes, mais pessoas novas
+                      estão chegando até você
+                    </CardFooter>
+                  </Card>
                 </div>
               </div>
             </div>

@@ -1,7 +1,7 @@
 export enum sender {
-  customer = "customer",
-  bot = "bot",
-  agent = "agent"
+  CUSTOMER = "CUSTOMER",
+  BOT = "BOT",
+  AGENT = "AGENT"
 }
 
 export interface ITicket {
