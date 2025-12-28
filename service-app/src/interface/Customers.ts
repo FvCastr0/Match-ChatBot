@@ -6,3 +6,26 @@ export interface Customers {
   id: string;
   chats: ITicket[];
 }
+
+export interface CustomerData {
+  id: string;
+  name: string;
+  phone: string;
+  chats: [
+    {
+      business: {
+        name: string;
+      };
+      id: string;
+      contactReason: string;
+      createdAt: string;
+      messages: [
+        {
+          content: string;
+          sender: string;
+          id: string;
+        }
+      ];
+    }
+  ];
+}

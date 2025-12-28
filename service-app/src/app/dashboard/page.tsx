@@ -459,11 +459,11 @@ export default function Dashboard() {
                                         {chat.customer.phone}
                                       </AlertDialogTitle>
                                     </AlertDialogHeader>
-                                    <div className="flex flex-col max-h-[400px] overflow-y-auto">
+                                    <div className="flex flex-col max-h-[400px] overflow-y-auto my-3">
                                       {chat.messages.map(message => (
                                         <div
                                           key={message.id}
-                                          className={`${
+                                          className={`my-1 ${
                                             message.sender === "CUSTOMER"
                                               ? "self-start bg-amber-400 px-2 py-1 rounded-md"
                                               : "self-end bg-amber-600 px-2 py-1 rounded-md"
@@ -676,7 +676,11 @@ export default function Dashboard() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setDateFilter("custom")}
+                    onClick={() => {
+                      if (dateFilter !== "custom") {
+                        setDateFilter("custom");
+                      } else setDateFilter("7days");
+                    }}
                   >
                     {dateFilter !== "custom"
                       ? "Usar período rápido"

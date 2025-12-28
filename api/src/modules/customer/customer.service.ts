@@ -33,6 +33,23 @@ export class CustomerService extends CustomerRepository {
     });
   }
 
+  async findCustomerData(id: string): Promise<Customer | null> {
+    return this.prisma.customer.findUnique({
+      where: { id },
+      include: {
+        chats: {
+          select: {
+            id: true,
+            messages: true,
+            business: true,
+            contactReason: true,
+            createdAt: true
+          }
+        }
+      }
+    });
+  }
+
   async createCustomer(id: string, name: string, phone: string) {
     await this.prisma.customer.create({
       data: {

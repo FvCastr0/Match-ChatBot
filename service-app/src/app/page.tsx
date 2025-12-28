@@ -4,16 +4,42 @@ import ChatCard from "@/components/chat/chatCard";
 import { DialogFinish } from "@/components/chat/dialogFinish";
 import { DialogNewChat } from "@/components/chat/dialogNewChat";
 import MessageBubble from "@/components/chat/message";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger
+} from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
+import { CustomerData } from "@/interface/Customers";
 import { logoMap } from "@/lib/logoMap";
+import { findCustomerChats } from "@/services/findCustomerChats";
 import { getTickets } from "@/services/getTickets";
 import { sendMessage } from "@/services/sendMessage";
 import { validateToken } from "@/services/validateToken";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Info, Send } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
@@ -25,6 +51,7 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 export default function Home() {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [tickets, setTickets] = useState<Array<ITicket>>([]);
+  const [customerData, setCustomerData] = useState<CustomerData>();
   const [messageInput, setMessageInput] = useState<string>("");
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -74,13 +101,6 @@ export default function Home() {
     selectedChatIdRef.current = selectedChatId;
   }, [selectedChatId]);
 
-  // Scroll to bottom
-  useEffect(() => {
-    if (selectedChat) {
-      scrollToBottom();
-    }
-  }, [selectedChat?.messages.length, selectedChat]);
-
   // Fetch tickets data
   useEffect(() => {
     const fetchData = async () => {
@@ -89,6 +109,7 @@ export default function Home() {
           const data = await getTickets(session.user.accessToken);
           if (data.data) setTickets(data.data);
         } catch (e) {
+          console.error(e);
           toast.error("Erro ao carregar data");
         }
       }
@@ -177,6 +198,31 @@ export default function Home() {
     }
   };
 
+  useEffect(() => {
+    if (selectedChatId !== null) {
+      const findData = async () => {
+        if (
+          session !== null &&
+          typeof session.user.accessToken === "string" &&
+          selectedChat
+        ) {
+          const customerResponse = await findCustomerChats(
+            session.user.accessToken,
+            selectedChat?.customer.id
+          );
+          setCustomerData(customerResponse.data);
+        }
+      };
+      findData();
+    }
+  }, [selectedChat, selectedChatId, session]);
+
+  useEffect(() => {
+    if (selectedChat) {
+      scrollToBottom();
+    }
+  }, [selectedChat?.messages.length, selectedChat]);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 h-screen">
       <ScrollArea
@@ -190,6 +236,9 @@ export default function Home() {
               onChatCreated={handleChatCreated}
               token={session?.user.accessToken ? session.user.accessToken : ""}
             />
+            <Button className="text-sm bg-red-500 hover:bg-red-700">
+              <Link href={"/dashboard"}>Dashboard</Link>
+            </Button>
             <p className="text-md space-y-4 text-gray-700 font-medium ">
               {tickets.length} tickets abertos
             </p>
@@ -238,10 +287,120 @@ export default function Home() {
                     style={{ width: "auto", height: "auto" }}
                   />
                 )}
+                <div className="flex gap-3">
+                  <h2 className="font-bold text-lg">
+                    {selectedChat.customer.name}
+                  </h2>
+                  <AlertDialog>
+                    <AlertDialogTrigger>
+                      <HoverCard>
+                        <HoverCardTrigger>
+                          <Info
+                            color="gray"
+                            size={25}
+                            className="cursor-pointer"
+                          />{" "}
+                        </HoverCardTrigger>
+                        <HoverCardContent>
+                          Chats existentes: {customerData?.chats.length}
+                          <br />
+                          Problemas relatados:{" "}
+                          {
+                            customerData?.chats.filter(
+                              chat => chat.contactReason === "problem"
+                            ).length
+                          }
+                        </HoverCardContent>
+                      </HoverCard>{" "}
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Chats do cliente
+                          <p className="text-muted-foreground text-sm">
+                            Chats existentes: {customerData?.chats.length}
+                          </p>
+                        </AlertDialogTitle>
+                        <div className="h-[350px] overflow-y-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Empresa</TableHead>
+                                <TableHead>Data</TableHead>
+                                <TableHead>Chats</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {customerData?.chats
+                                .filter(
+                                  chat => chat.contactReason === "problem"
+                                )
+                                .map(chat => (
+                                  <TableRow key={chat.id}>
+                                    <TableCell className="font-medium">
+                                      {chat.business.name}
+                                    </TableCell>
 
-                <h2 className="font-bold text-lg">
-                  {selectedChat.customer.name}
-                </h2>
+                                    <TableCell>
+                                      {new Date(
+                                        chat.createdAt
+                                      ).toLocaleDateString("pt-BR")}
+                                    </TableCell>
+
+                                    <TableCell>
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                          <Button
+                                            variant="outline"
+                                            className="cursor-pointer"
+                                          >
+                                            Visualizar
+                                          </Button>
+                                        </AlertDialogTrigger>
+
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>
+                                              Empresa {chat.business.name}
+                                            </AlertDialogTitle>
+                                          </AlertDialogHeader>
+
+                                          <div className="flex flex-col max-h-[400px] overflow-y-auto my-3">
+                                            {chat.messages.map(message => (
+                                              <div
+                                                key={message.id}
+                                                className={`my-1 ${
+                                                  message.sender === "CUSTOMER"
+                                                    ? "self-start bg-amber-400 px-2 py-1 rounded-md"
+                                                    : "self-end bg-amber-600 px-2 py-1 rounded-md"
+                                                }`}
+                                              >
+                                                <p>{message.content}</p>
+                                              </div>
+                                            ))}
+                                          </div>
+
+                                          <AlertDialogFooter>
+                                            <AlertDialogAction className="cursor-pointer">
+                                              Voltar
+                                            </AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                        <AlertDialogDescription></AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogAction>Voltar</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
               <DialogFinish
                 id={selectedChat.id}
