@@ -1,4 +1,5 @@
 import { login } from "@/services/login";
+import { validateToken } from "@/services/validateToken";
 import NextAuth, { NextAuthOptions } from "next-auth";
 import { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -15,6 +16,8 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     accessToken?: string;
+    refreshToken?: string;
+    accessTokenExpires?: number;
   }
 }
 
@@ -49,11 +52,22 @@ export const authOptions: NextAuthOptions = {
       }
     })
   ],
+  jwt: {
+    maxAge: 60 * 60
+  },
+  session: {
+    maxAge: 60 * 60
+  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.accessToken = user.accessToken;
+        token.accessTokenExpires = Date.now() + 60 * 60 * 1000;
       }
+      if (!token.accessToken) return {};
+      const isValid = await validateToken(token.accessToken);
+      if (!isValid) return {};
+
       return token;
     },
     async session({ session, token }) {

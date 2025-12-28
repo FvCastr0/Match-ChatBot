@@ -6,40 +6,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum SenderType {
-  CUSTOMER
-  BOT
-  AGENT
-}
-
-enum Steps {
-  started
-  business_redirect
-  contact_reason
-  place_order_pizza
-  place_order_burger
-  place_order_fihass
-  report_problem
-  attendant
-}
-
-enum ContactReason {
-  order
-  problem
-  feedback
-}
-
-enum Roles {
-  manager
-  attendant
-}
-
-enum ChatStatus {
-  open
-  finished
-  unfinished
-}
-
 model Business {
   id           String @id @default(cuid())
   name         String
@@ -61,36 +27,60 @@ model Customer {
 }
 
 model Chat {
-  id String @id @default(cuid())
-
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id])
-
-  currentStep Steps
-
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
-
-  business   Business? @relation(fields: [businessId], references: [id])
-  businessId String?
-
+  id            String         @id @default(cuid())
+  customerId    String
+  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime       @default(now())
+  businessId    String?
   contactReason ContactReason?
-
-  status ChatStatus
-
-  messages Message[]
-
-  closedAt  DateTime?
-  startedBy SenderType?
+  currentStep   Steps
+  closedAt      DateTime?
+  startedBy     SenderType?
+  status        ChatStatus
+  business      Business?      @relation(fields: [businessId], references: [id])
+  customer      Customer       @relation(fields: [customerId], references: [id])
+  messages      Message[]
 }
 
 model Message {
-  id String @id @default(cuid())
+  id        String     @id @default(cuid())
+  chatId    String
+  sender    SenderType
+  content   String
+  createdAt DateTime   @default(now())
+  chat      Chat       @relation(fields: [chatId], references: [id], onDelete: Cascade)
+}
 
-  chatId  String
-  chat    Chat       @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  sender  SenderType
-  content String     @db.Text
+enum SenderType {
+  CUSTOMER
+  BOT
+  AGENT
+}
 
-  createdAt DateTime @default(now())
+enum Steps {
+  business_redirect
+  contact_reason
+  place_order_pizza
+  place_order_burger
+  place_order_fihass
+  report_problem
+  attendant
+  started
+}
+
+enum ContactReason {
+  order
+  problem
+  feedback
+}
+
+enum Roles {
+  manager
+  attendant
+}
+
+enum ChatStatus {
+  open
+  finished
+  unfinished
 }

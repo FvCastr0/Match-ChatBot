@@ -79,7 +79,6 @@ export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
     try {
       setIsLoading(true);
       const businessIdentifier = data.business;
-      console.log(token);
 
       const response = await startChat(
         token,

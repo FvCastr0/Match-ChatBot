@@ -214,7 +214,6 @@ export class ChatService extends ChatRepository {
       this.chatGateway.emitNewTicket(chatPayload);
       return chatId;
     } catch (e) {
-      console.log(e);
       throw new UnauthorizedException("Não foi possível iniciar o chat.");
     }
   }

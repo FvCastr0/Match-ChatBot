@@ -13,8 +13,8 @@ import { sendTextMessage } from "src/shared/utils/sendTextMessage";
 @Injectable()
 export class StartedHandler implements StepHandler {
   private readonly companyKeywords = {
-    match_pizza: ["match", "pizza", "pizzaria", "match pizza"],
     smatch_burger: ["smatch", "burger", "hamburguer", "smatch burger"],
+    match_pizza: ["match", "pizza", "pizzaria", "match pizza"],
     fihass: ["fihass", "esfirra", "esfiha", "fihas"]
   };
   constructor(
@@ -36,6 +36,7 @@ export class StartedHandler implements StepHandler {
 
     if (typeof businessName !== "string") return;
     const business = await this.businessService.findByName(businessName);
+
     if (!business) {
       await sendTextMessage(
         dataMsg.phone,

@@ -24,5 +24,7 @@ export function detectCategory(
     }
   }
 
+  console.log(message, best.category);
+
   return best.score <= fuzzyLimit ? best.category : "unknown";
 }

@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { logoMap } from "@/lib/logoMap";
 import { getTickets } from "@/services/getTickets";
 import { sendMessage } from "@/services/sendMessage";
+import { validateToken } from "@/services/validateToken";
 import { ArrowLeft, Send } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
@@ -33,7 +34,13 @@ export default function Home() {
       router.push("/login");
       toast.error("Você deve fazer login.");
     }
-  }, [status, router]);
+    const isValid = async () => {
+      if (typeof session?.user.accessToken !== "string") return;
+      const validation = await validateToken(session?.user.accessToken);
+      if (!validation.ok) router.push("/login");
+    };
+    isValid();
+  }, [status, router, session]);
 
   const socket = useMemo(
     () =>
@@ -82,7 +89,6 @@ export default function Home() {
           const data = await getTickets(session.user.accessToken);
           if (data.data) setTickets(data.data);
         } catch (e) {
-          console.log(e);
           toast.error("Erro ao carregar data");
         }
       }

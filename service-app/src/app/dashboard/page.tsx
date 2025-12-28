@@ -40,6 +40,7 @@ import { Customers } from "@/interface/Customers";
 import { ITicket } from "@/interface/ITicket";
 import { findAllChats } from "@/services/findAllChats";
 import { findAllCustomers } from "@/services/findAllCustomers";
+import { validateToken } from "@/services/validateToken";
 import { AlertDialogDescription } from "@radix-ui/react-alert-dialog";
 import { Loader2 } from "lucide-react";
 
@@ -89,9 +90,6 @@ export default function Dashboard() {
   );
 
   const [dateFilter, setDateFilter] = useState<DateFilter>("7days");
-
-  console.log(dateFilter);
-
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
 
@@ -181,7 +179,13 @@ export default function Dashboard() {
       router.push("/login");
       toast.error("Você deve fazer login.");
     }
-  }, [status, router]);
+    const isValid = async () => {
+      if (typeof session?.user.accessToken !== "string") return;
+      const validation = await validateToken(session?.user.accessToken);
+      if (!validation.ok) router.push("/login");
+    };
+    isValid();
+  }, [status, router, session?.user.accessToken]);
 
   const filteredChats = useMemo(() => {
     if (!chats.length) return [];
@@ -241,7 +245,7 @@ export default function Dashboard() {
       );
     }, 0);
 
-    return totalTime / closedChats.length;
+    return (totalTime / closedChats.length / (1000 * 60)).toFixed(1);
   }, [filteredChats]);
 
   const groupedMessages = useMemo(() => {
@@ -285,12 +289,12 @@ export default function Dashboard() {
     const orders = filteredChats.filter(
       chat => chat.contactReason === "order"
     ).length;
-    const problems = filteredChats.filter(
-      chat => chat.contactReason === "problem"
+    const feedback = filteredChats.filter(
+      chat => chat.contactReason === "feedback"
     ).length;
     return [
       { reason: "order", name: orders, fill: "#1447E6" },
-      { reason: "feedback", name: problems, fill: "#155DFC" }
+      { reason: "feedback", name: feedback, fill: "#155DFC" }
     ];
   }, [filteredChats]);
 
@@ -384,14 +388,12 @@ export default function Dashboard() {
             />
             <Kpi
               title="Média de duração das conversas"
-              value={`${Math.round(averageChatDuration / 1000 / 60)} minutos`}
+              value={`${averageChatDuration} minutos`}
             />
 
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription>
-                  Chats não finalizados / abertos
-                </CardDescription>
+                <CardDescription>Chats não finalizados</CardDescription>
 
                 <CardTitle className="text-2xl">
                   {
@@ -428,11 +430,7 @@ export default function Dashboard() {
                       </TableHeader>
                       <TableBody>
                         {chats
-                          .filter(
-                            chat =>
-                              chat.status !== "finished" &&
-                              chat.currentStep !== "attendant"
-                          )
+                          .filter(chat => chat.status !== "finished")
                           .map(chat => (
                             <TableRow key={chat.id}>
                               <TableCell className="font-medium">
