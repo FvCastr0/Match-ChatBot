@@ -1,5 +1,14 @@
-import { Body, Controller, Get, Post, Request, Res } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Request,
+  Res,
+  UseGuards
+} from "@nestjs/common";
 import type { Response } from "express";
+import { JwtAuthGuard } from "src/auth/jwt.guard";
 import { CreateUserDto } from "./dto/createUser.dto";
 import { UserService } from "./user.service";
 
@@ -21,7 +30,7 @@ export class UserController {
       return res.status(500).send({ msg: "Internal error" });
     }
   }
-
+  @UseGuards(JwtAuthGuard)
   @Post("create")
   async createUser(@Body() createUserDto: CreateUserDto, @Res() res: Response) {
     try {

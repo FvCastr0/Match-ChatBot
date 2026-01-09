@@ -28,6 +28,7 @@ export class WebhookController {
   @Post()
   async reciveMessage(@Body() body: any, @Res() res: Response) {
     const dataMsg = ProcessRecivedData(body);
+
     if (dataMsg === null) return res.sendStatus(200);
 
     try {

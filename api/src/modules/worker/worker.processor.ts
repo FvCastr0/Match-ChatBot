@@ -60,6 +60,8 @@ export class WorkerProcessor extends WorkerHost {
       const handler = this.stepFactory.getHandler(chatData?.currentStep);
       await handler.handle(chatData, dataMsg);
     } catch (error) {
+      console.log(error);
+
       throw error;
     }
   }
