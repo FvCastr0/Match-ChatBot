@@ -39,7 +39,7 @@ export default function Login() {
         setIsLoading(false);
       } else {
         toast.success("Login efetuado com sucesso.");
-        router.push("/");
+        router.push("/service");
       }
     } catch (e) {
       toast.error("Internal error");

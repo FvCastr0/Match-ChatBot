@@ -58,13 +58,13 @@ export default function Home() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/login");
+      router.push("/service/login");
       toast.error("Você deve fazer login.");
     }
     const isValid = async () => {
       if (typeof session?.user.accessToken !== "string") return;
       const validation = await validateToken(session?.user.accessToken);
-      if (!validation.ok) router.push("/login");
+      if (!validation.ok) router.push("/service/login");
     };
     isValid();
   }, [status, router, session]);
@@ -237,7 +237,7 @@ export default function Home() {
               token={session?.user.accessToken ? session.user.accessToken : ""}
             />
             <Button className="text-sm bg-red-500 hover:bg-red-700">
-              <Link href={"/dashboard"}>Dashboard</Link>
+              <Link href={"/service/dashboard"}>Dashboard</Link>
             </Button>
             <p className="text-md space-y-4 text-gray-700 font-medium ">
               {tickets.length} tickets abertos

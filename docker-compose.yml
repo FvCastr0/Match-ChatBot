@@ -1,0 +1,45 @@
+services:
+  api:
+    build: ./api
+    container_name: match-chatbot-api
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./api/.env
+    depends_on:
+      - redis
+      - postgres
+    restart: unless-stopped
+  frontend:
+    build:
+      context: ./service-app
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./service-app/.env
+    restart: always
+  postgres:
+    image: bitnami/postgresql:latest
+    environment:
+      - POSTGRESQL_USERNAME=docker
+      - POSTGRESQL_PASSWORD=docker
+      - POSTGRESQL_DATABASE=polls
+    ports:
+      - "5432:5432"
+    volumes:
+      - polls_pg_data:/bitnami/postgresql
+    restart: unless-stopped
+
+  redis:
+    image: bitnami/redis:latest
+    environment:
+      - REDIS_PASSWORD=8em4UzKx88U99
+    ports:
+      - "6379:6379"
+    volumes:
+      - polls_redis_data:/bitnami/redis/data
+    restart: unless-stopped
+
+volumes:
+  polls_pg_data:
+  polls_redis_data:

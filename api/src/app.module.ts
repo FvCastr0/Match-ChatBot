@@ -14,7 +14,7 @@ import { WebhookModule } from "./modules/webhook/webhook.module";
 import { WorkerModule } from "./modules/worker/worker.module";
 import { QueueModule } from "./queue/queue.module";
 import { PrismaModule } from "./shared/lib/prisma/prisma.module";
-
+import { AppController } from "./app.controller"
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -22,16 +22,8 @@ import { PrismaModule } from "./shared/lib/prisma/prisma.module";
     }),
     BullModule.forRoot({
       connection: {
-        host: "localhost",
-        port: Number(process.env.REDIS_PORT) || 6379
+       url: process.env.REDIS_URL,
       }
-    }),
-    CacheModule.register({
-      isGlobal: true,
-      store: redisStore,
-      host: process.env.REDIS_HOST || "localhost",
-      port: process.env.REDIS_PORT || 6379,
-      ttl: 600
     }),
 
     ScheduleModule.forRoot(),
@@ -45,6 +37,7 @@ import { PrismaModule } from "./shared/lib/prisma/prisma.module";
     QueueModule,
     AuthModule,
     ChatModule
-  ]
+  ],
+  controllers: [AppController]
 })
 export class AppModule {}
