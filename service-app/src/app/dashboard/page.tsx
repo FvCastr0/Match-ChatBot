@@ -176,13 +176,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/service/login");
+      router.push("/login");
       toast.error("Você deve fazer login.");
     }
     const isValid = async () => {
       if (typeof session?.user.accessToken !== "string") return;
       const validation = await validateToken(session?.user.accessToken);
-      if (!validation.ok) router.push("/service/login");
+      if (!validation.ok) router.push("/login");
     };
     isValid();
   }, [status, router, session?.user.accessToken]);
@@ -234,7 +234,9 @@ export default function Dashboard() {
   const averageChatDuration = useMemo(() => {
     if (!filteredChats || filteredChats.length === 0) return 0;
 
-    const closedChats = filteredChats.filter(chat => chat.status !== "open");
+    const closedChats = filteredChats.filter(
+      chat => chat.status !== "unfinished"
+    );
 
     if (closedChats.length === 0) return 0;
 
@@ -370,7 +372,7 @@ export default function Dashboard() {
                 Há {chats.filter(chat => chat.status === "open").length} tickets
                 abertos.
               </span>
-              <Link href="/service" className="text-primary font-medium">
+              <Link href="/" className="text-primary font-medium">
                 Voltar para conversas
               </Link>
             </div>
