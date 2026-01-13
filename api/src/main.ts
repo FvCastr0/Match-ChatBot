@@ -12,8 +12,8 @@ async function bootstrap() {
   );
 
   app.enableCors({
-   origin: "https://redematch.com.br",
-   credentials: true,
+    origin: "https://redematch.com.br",
+    credentials: true
   });
 
   await app.listen(process.env.PORT ?? 3000);

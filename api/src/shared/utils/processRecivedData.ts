@@ -31,7 +31,7 @@ export function ProcessRecivedData(data: any): MessageData | null {
       }
     }
 
-    const customerId = data.entry[0].id;
+    const customerId = message.from;
     const customerPhone = message.from;
     const customerMessage = messageValue();
     const timeLastMsg = message.timestamp;
