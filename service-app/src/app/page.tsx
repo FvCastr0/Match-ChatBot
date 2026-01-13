@@ -35,7 +35,6 @@ import { logoMap } from "@/lib/logoMap";
 import { findCustomerChats } from "@/services/findCustomerChats";
 import { getTickets } from "@/services/getTickets";
 import { sendMessage } from "@/services/sendMessage";
-import { validateToken } from "@/services/validateToken";
 import { ArrowLeft, Info, Send } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
@@ -43,185 +42,138 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 import { ITicket } from "../interface/ITicket";
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export default function Home() {
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
-  const [tickets, setTickets] = useState<Array<ITicket>>([]);
-  const [customerData, setCustomerData] = useState<CustomerData>();
-  const [messageInput, setMessageInput] = useState<string>("");
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-      toast.error("Você deve fazer login.");
-    }
-    const isValid = async () => {
-      if (typeof session?.user.accessToken !== "string") return;
-      const validation = await validateToken(session?.user.accessToken);
-      if (!validation.ok) router.push("/login");
-    };
-    isValid();
-  }, [status, router, session]);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [tickets, setTickets] = useState<ITicket[]>([]);
+  const [customerData, setCustomerData] = useState<CustomerData>();
+  const [messageInput, setMessageInput] = useState("");
 
-  const socket = useMemo(
-    () =>
-      io(SOCKET_URL, {
-        reconnection: false
-      }),
-    []
-  );
-
-  const ticketsRef = useRef<Array<ITicket>>([]);
+  const socketRef = useRef<Socket | null>(null);
+  const ticketsRef = useRef<ITicket[]>([]);
   const selectedChatIdRef = useRef<string | null>(null);
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [status, router]);
 
-  const selectedChat = useMemo(
-    () => tickets.find(t => t.id === selectedChatId) || null,
-    [tickets, selectedChatId]
-  );
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user.accessToken) return;
 
-  // Keep ticketsRef updated
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket"],
+      auth: {
+        token: session.user.accessToken
+      }
+    });
+
+    socketRef.current = socket;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handleNewMessage = (payload: any) => {
+      const message = payload.message ?? payload;
+      const chatId = payload.chatId ?? message.chatId;
+
+      setTickets(prev =>
+        prev.map(ticket =>
+          String(ticket.id) === String(chatId)
+            ? {
+                ...ticket,
+                messages: [
+                  ...ticket.messages,
+                  {
+                    id: message.id ?? `temp-${Date.now()}`,
+                    content: message.content ?? "",
+                    sender: message.sender ?? "CUSTOMER",
+                    createdAt: message.createdAt ?? new Date().toISOString()
+                  }
+                ]
+              }
+            : ticket
+        )
+      );
+    };
+
+    const handleNewTicket = (ticket: ITicket) => {
+      if (!ticketsRef.current.some(t => t.id === ticket.id)) {
+        setTickets(prev => [...prev, ticket]);
+      }
+    };
+
+    const handleTicketClosed = ({ ticketId }: { ticketId: string }) => {
+      setTickets(prev => prev.filter(t => t.id !== ticketId));
+      if (selectedChatIdRef.current === ticketId) {
+        setSelectedChatId(null);
+      }
+    };
+
+    socket.on("createMessage", handleNewMessage);
+    socket.on("newTicket", handleNewTicket);
+    socket.on("ticketClosed", handleTicketClosed);
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [status, session?.user.accessToken]);
+
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user.accessToken) return;
+
+    getTickets(session.user.accessToken)
+      .then(res => res.data && setTickets(res.data))
+      .catch(() => toast.error("Erro ao carregar tickets"));
+  }, [status, session?.user.accessToken]);
+
   useEffect(() => {
     ticketsRef.current = tickets;
   }, [tickets]);
 
-  // Keep selectedChatIdRef updated
   useEffect(() => {
     selectedChatIdRef.current = selectedChatId;
   }, [selectedChatId]);
 
-  // Fetch tickets data
+  const selectedChat = useMemo(
+    () => tickets.find(t => t.id === selectedChatId) ?? null,
+    [tickets, selectedChatId]
+  );
+
   useEffect(() => {
-    const fetchData = async () => {
-      if (status === "authenticated" && session?.user.accessToken) {
-        try {
-          const data = await getTickets(session.user.accessToken);
-          if (data.data) setTickets(data.data);
-        } catch (e) {
-          console.error(e);
-          toast.error("Erro ao carregar data");
-        }
-      }
-    };
-    fetchData();
-  }, [status, session]);
+    if (!selectedChat || !session?.user.accessToken) return;
 
-  // Socket event listeners
+    findCustomerChats(session.user.accessToken, selectedChat.customer.id)
+      .then(res => setCustomerData(res.data))
+      .catch(() => {});
+  }, [selectedChat, session?.user.accessToken]);
+
   useEffect(() => {
-    if (socket) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const handleNewMessage = (payload: any) => {
-        const rawMessage = payload.message || payload;
-        const targetChatId = payload.chatId || rawMessage.chatId;
-
-        setTickets(prevTickets => {
-          return prevTickets.map(ticket => {
-            if (String(ticket.id) === String(targetChatId)) {
-              const newMessage = {
-                id: rawMessage.id || `temp-${Date.now()}`,
-                content: rawMessage.content || rawMessage.body || "",
-                sender: rawMessage.sender || "CUSTOMER",
-                createdAt: rawMessage.createdAt || new Date().toISOString()
-              };
-
-              return {
-                ...ticket,
-                messages: [...ticket.messages, newMessage],
-                updatedAt: new Date().toISOString()
-              };
-            }
-            return ticket;
-          });
-        });
-      };
-
-      const handleTicketClosed = (payload: { ticketId: string }) => {
-        setTickets(prevTickets => {
-          return prevTickets.filter(t => t.id !== payload.ticketId);
-        });
-
-        if (selectedChatIdRef.current === payload.ticketId) {
-          setSelectedChatId(null);
-        }
-      };
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const handleNewTicket = (payload: any) => {
-        const chatExists = ticketsRef.current.some(
-          ticket => ticket.id === payload.id
-        );
-        if (!chatExists) {
-          setTickets(prevTickets => [...prevTickets, payload]);
-        }
-      };
-
-      socket.on("newTicket", handleNewTicket);
-      socket.on("createMessage", handleNewMessage);
-      socket.on("ticketClosed", handleTicketClosed);
-      return () => {
-        socket.off("newTicket", handleNewTicket);
-        socket.off("createMessage", handleNewMessage);
-        socket.off("ticketClosed", handleTicketClosed);
-      };
-    }
-  }, [socket, setTickets]);
-
-  const handleChatCreated = (newTicket: string) => {
-    setSelectedChatId(newTicket);
-  };
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [selectedChat?.messages.length]);
 
   const handleSendMessage = async () => {
+    if (!messageInput.trim() || !selectedChat || !session?.user.accessToken)
+      return;
+
+    const text = messageInput;
     setMessageInput("");
-    if (status === "authenticated" && session.user.accessToken)
-      await sendMessage(
-        selectedChatId!,
-        messageInput,
-        selectedChat!.customer.phone,
-        session.user.accessToken
-      );
+
+    await sendMessage(
+      selectedChat.id,
+      text,
+      selectedChat.customer.phone,
+      session.user.accessToken
+    );
   };
-
-  const handleKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && messageInput.trim() !== "") {
-      handleSendMessage();
-    }
-  };
-
-  useEffect(() => {
-    if (selectedChatId !== null) {
-      const findData = async () => {
-        if (
-          session !== null &&
-          typeof session.user.accessToken === "string" &&
-          selectedChat
-        ) {
-          const customerResponse = await findCustomerChats(
-            session.user.accessToken,
-            selectedChat?.customer.id
-          );
-          setCustomerData(customerResponse.data);
-        }
-      };
-      findData();
-    }
-  }, [selectedChat, selectedChatId, session]);
-
-  useEffect(() => {
-    if (selectedChat) {
-      scrollToBottom();
-    }
-  }, [selectedChat?.messages.length, selectedChat]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 h-screen">
@@ -233,7 +185,7 @@ export default function Home() {
         <div className="p-4 space-y-1">
           <div className="flex items-center justify-between mb-6">
             <DialogNewChat
-              onChatCreated={handleChatCreated}
+              onChatCreated={setSelectedChatId}
               token={session?.user.accessToken ? session.user.accessToken : ""}
             />
             <Button className="text-sm bg-red-500 hover:bg-red-700">
@@ -440,7 +392,7 @@ export default function Home() {
                   onSubmit={handleSendMessage}
                   value={messageInput}
                   onChange={e => setMessageInput(e.target.value)}
-                  onKeyUp={handleKeyUp}
+                  onKeyDown={e => e.key === "Enter" && handleSendMessage()}
                 />
                 <Button
                   size="icon"

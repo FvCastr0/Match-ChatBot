@@ -40,7 +40,6 @@ import { Customers } from "@/interface/Customers";
 import { ITicket } from "@/interface/ITicket";
 import { findAllChats } from "@/services/findAllChats";
 import { findAllCustomers } from "@/services/findAllCustomers";
-import { validateToken } from "@/services/validateToken";
 import { AlertDialogDescription } from "@radix-ui/react-alert-dialog";
 import { Loader2 } from "lucide-react";
 
@@ -84,6 +83,12 @@ export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  });
 
   const [selectedBusiness, setSelectedBusiness] = useState<SelectCompanies>(
     SelectCompanies.general
@@ -173,19 +178,6 @@ export default function Dashboard() {
 
     loadData();
   }, [session?.user.accessToken]);
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-      toast.error("Você deve fazer login.");
-    }
-    const isValid = async () => {
-      if (typeof session?.user.accessToken !== "string") return;
-      const validation = await validateToken(session?.user.accessToken);
-      if (!validation.ok) router.push("/login");
-    };
-    isValid();
-  }, [status, router, session?.user.accessToken]);
 
   const filteredChats = useMemo(() => {
     if (!chats.length) return [];
@@ -441,9 +433,7 @@ export default function Dashboard() {
                                   : "Atendente"}
                               </TableCell>
                               <TableCell>{chat.customer.phone}</TableCell>
-                              <TableCell>
-                                {(chat.currentStep = steps.attendant)}
-                              </TableCell>
+                              <TableCell>{steps.attendant}</TableCell>
                               <TableCell>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
