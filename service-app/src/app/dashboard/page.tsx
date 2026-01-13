@@ -227,7 +227,7 @@ export default function Dashboard() {
     if (!filteredChats || filteredChats.length === 0) return 0;
 
     const closedChats = filteredChats.filter(
-      chat => chat.status !== "unfinished"
+      chat => chat.status !== "unfinished" && chat.status !== "open"
     );
 
     if (closedChats.length === 0) return 0;
@@ -508,7 +508,7 @@ export default function Dashboard() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Clientes</AlertDialogTitle>
                     <AlertDialogDescription className="text-sm text-muted-foreground">
-                      Tabela com as informaçõees dos clientes
+                      Tabela com as informações dos clientes
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <div className="h-[350px] overflow-y-auto">
@@ -525,7 +525,7 @@ export default function Dashboard() {
                       <TableBody>
                         {customers.map(customer => (
                           <TableRow key={customer.id}>
-                            <TableCell className="font-medium">
+                            <TableCell className="font-medium max-w-[200px] overflow-x-auto">
                               {customer.name}
                             </TableCell>
                             <TableCell>{customer.phone}</TableCell>
