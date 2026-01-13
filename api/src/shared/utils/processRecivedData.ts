@@ -10,6 +10,8 @@ export function ProcessRecivedData(data: any): MessageData | null {
   const changes = data.entry?.[0]?.changes?.[0];
   const value = changes?.value;
 
+  console.log(changes, value);
+
   if (value?.messages) {
     const message = value.messages[0];
 
