@@ -197,9 +197,9 @@ export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
                 />
 
                 <Input
-                  placeholder="+55 (32) 9 9999-9999"
+                  placeholder="(32) 9999-9999"
                   type="tel"
-                  value={data.phone}
+                  value={data.phone.replace(/\D/g, "")}
                   onChange={e => setData({ ...data, phone: e.target.value })}
                 />
 
