@@ -79,10 +79,10 @@ export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
     try {
       setIsLoading(true);
       const businessIdentifier = data.business;
-
+      const phone = data.phone.slice(0, 2) + data.phone.slice(3);
       const response = await startChat(
         token,
-        data.phone,
+        phone,
         data.contactReason,
         data.message,
         businessIdentifier,
@@ -200,7 +200,12 @@ export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
                   placeholder="(32) 9999-9999"
                   type="tel"
                   value={data.phone.replace(/\D/g, "")}
-                  onChange={e => setData({ ...data, phone: e.target.value })}
+                  onChange={e =>
+                    setData({
+                      ...data,
+                      phone: e.target.value.replace(/\D/g, "")
+                    })
+                  }
                 />
 
                 <Input

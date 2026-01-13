@@ -23,7 +23,7 @@ export const sendMessage = async (
         body: JSON.stringify({
           chatId,
           content: message,
-          phone: `55${phone.replace(/\D/g, "").slice(0, 2) + phone.slice(3)}`
+          phone
         })
       }
     );
