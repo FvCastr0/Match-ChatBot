@@ -14,7 +14,7 @@ import { WebhookModule } from "./modules/webhook/webhook.module";
 import { WorkerModule } from "./modules/worker/worker.module";
 import { QueueModule } from "./queue/queue.module";
 import { PrismaModule } from "./shared/lib/prisma/prisma.module";
-import { AppController } from "./app.controller"
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -37,7 +37,6 @@ import { AppController } from "./app.controller"
     QueueModule,
     AuthModule,
     ChatModule
-  ],
-  controllers: [AppController]
+  ]
 })
 export class AppModule {}
