@@ -2,7 +2,7 @@ import { Processor, WorkerHost } from "@nestjs/bullmq";
 import { Job } from "bullmq";
 import { StepHandlerFactory } from "src/queue/step-handler-factory";
 import { MessageData } from "src/shared/utils/processRecivedData";
-import { sendMessageWithTemplate } from "src/shared/utils/sendMessageWithTemplate";
+import { sendTextMessage } from "src/shared/utils/sendTextMessage";
 import { ChatService } from "../chat/chat.service";
 import { CustomerService } from "../customer/customer.service";
 import { MessageService } from "../message/message.service";
@@ -47,7 +47,10 @@ export class WorkerProcessor extends WorkerHost {
           dataMsg.msg,
           "CUSTOMER"
         );
-        await sendMessageWithTemplate(dataMsg.phone, "business_redirect");
+        await sendTextMessage(dataMsg.phone, `*Seja Bem vindo a Rede Match!*
+Para agilizar seu atendimento, com qual empresa você gostaria de falar? 
+_(Match Pizza, Fihass, Smatch Burger)_
+`);
         await this.messageService.createMessage(
           chat.id,
           "Mensagem redirecionamento empresa",

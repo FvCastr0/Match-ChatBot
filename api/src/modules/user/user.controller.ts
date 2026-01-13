@@ -30,7 +30,7 @@ export class UserController {
       return res.status(500).send({ msg: "Internal error" });
     }
   }
-  @UseGuards(JwtAuthGuard)
+
   @Post("create")
   async createUser(@Body() createUserDto: CreateUserDto, @Res() res: Response) {
     try {

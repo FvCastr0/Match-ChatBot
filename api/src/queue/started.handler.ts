@@ -40,7 +40,7 @@ export class StartedHandler implements StepHandler {
     if (!business) {
       await sendTextMessage(
         dataMsg.phone,
-        "Você deve selecionar ou digitar o nome da empresa que você quer falar."
+        "Você deve digitar o *nome da empresa* que você quer entrar em contato."
       );
 
       await this.messageService.createMessage(

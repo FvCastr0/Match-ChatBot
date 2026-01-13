@@ -137,10 +137,8 @@ export class ContactReasonHandler implements StepHandler {
     if (category === "problem") {
       await sendTextMessage(
         dataMsg.phone,
-        `*Poxa*, sentimos muito que algo não saiu como você esperava 😔
-
-Diga para nós de uma forma breve qual problema está acontecendo para você ser direcionado da melhor forma possível 🙏`
-      );
+        `Entendemos sua frustração e vamos buscar resolver da melhor forma 🚀
+Explique de forma *breve* o que está acontecendo para haver um melhor redirecionamento.`);
       await this.messageService.createMessage(
         chat.id,
         "Qual problema você está tendo?",
