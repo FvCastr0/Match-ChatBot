@@ -73,7 +73,14 @@ export class ContactReasonHandler implements StepHandler {
 
     const activeChat = await this.chatService.findAndIsActive(chat.customerId);
     if (activeChat?.status !== "open") return;
-    await this.messageService.createMessage(chat.id, dataMsg.msg, "CUSTOMER");
+    await this.messageService.createMessage(
+      chat.id,
+      dataMsg.msg,
+      "CUSTOMER",
+      "TEXT",
+      "",
+      ""
+    );
 
     const category = detectCategory(dataMsg.msg, this.intentKeywords);
 
@@ -90,7 +97,10 @@ export class ContactReasonHandler implements StepHandler {
         await this.messageService.createMessage(
           chat.id,
           "Opção não selecionada",
-          "BOT"
+          "BOT",
+          "TEXT",
+          "",
+          ""
         );
         return;
       }
@@ -106,7 +116,10 @@ export class ContactReasonHandler implements StepHandler {
         await this.messageService.createMessage(
           chat.id,
           "PROBLEMA INTERNO!!!",
-          "BOT"
+          "BOT",
+          "TEXT",
+          "",
+          ""
         );
       }
 
@@ -123,7 +136,10 @@ export class ContactReasonHandler implements StepHandler {
       await this.messageService.createMessage(
         chat.id,
         "Perfeito! Envie seu feedback por aqui mesmo!",
-        "BOT"
+        "BOT",
+        "TEXT",
+        "",
+        ""
       );
       await this.chatService.finishChat(chat.id);
       await this.chatService.updateContactReason(
@@ -142,7 +158,10 @@ Explique de forma *breve* o que está acontecendo para haver um melhor redirecio
       await this.messageService.createMessage(
         chat.id,
         "Qual problema você está tendo?",
-        "BOT"
+        "BOT",
+        "TEXT",
+        "",
+        ""
       );
       await this.chatService.updateContactReason(chat.id, "problem");
       await this.chatService.updateStep(chat.id, "attendant");

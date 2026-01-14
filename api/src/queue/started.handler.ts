@@ -31,7 +31,14 @@ export class StartedHandler implements StepHandler {
     const activeChat = await this.chatService.findAndIsActive(chat.customerId);
     if (activeChat?.status !== "open") return;
 
-    await this.messageService.createMessage(chat.id, dataMsg.msg, "CUSTOMER");
+    await this.messageService.createMessage(
+      chat.id,
+      dataMsg.msg,
+      "CUSTOMER",
+      "TEXT",
+      "",
+      ""
+    );
     const businessName = detectCategory(dataMsg.msg, this.companyKeywords);
 
     if (typeof businessName !== "string") return;
@@ -46,7 +53,10 @@ export class StartedHandler implements StepHandler {
       await this.messageService.createMessage(
         chat.id,
         "Opção não selecionada",
-        "BOT"
+        "BOT",
+        "TEXT",
+        "",
+        ""
       );
       return;
     }
@@ -54,7 +64,10 @@ export class StartedHandler implements StepHandler {
     await this.messageService.createMessage(
       chat.id,
       "Mensagem motivo do contato",
-      "BOT"
+      "BOT",
+      "TEXT",
+      "",
+      ""
     );
     await sendMessageWithTemplate(dataMsg.phone, "contact");
 
