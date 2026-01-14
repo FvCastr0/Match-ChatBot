@@ -73,7 +73,6 @@ export class ContactReasonHandler implements StepHandler {
 
     const activeChat = await this.chatService.findAndIsActive(chat.customerId);
     if (activeChat?.status !== "open") return;
-
     await this.messageService.createMessage(chat.id, dataMsg.msg, "CUSTOMER");
 
     const category = detectCategory(dataMsg.msg, this.intentKeywords);
@@ -138,7 +137,8 @@ export class ContactReasonHandler implements StepHandler {
       await sendTextMessage(
         dataMsg.phone,
         `Entendemos sua frustração e vamos buscar resolver da melhor forma 🚀
-Explique de forma *breve* o que está acontecendo para haver um melhor redirecionamento.`);
+Explique de forma *breve* o que está acontecendo para haver um melhor redirecionamento.`
+      );
       await this.messageService.createMessage(
         chat.id,
         "Qual problema você está tendo?",

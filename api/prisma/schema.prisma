@@ -46,9 +46,14 @@ model Message {
   id        String     @id @default(cuid())
   chatId    String
   sender    SenderType
-  content   String
   createdAt DateTime   @default(now())
   chat      Chat       @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  content   String?
+
+  mediaUrl  String?
+  mediaType String?
+
+  type MessageType @default(TEXT)
 }
 
 enum SenderType {
@@ -83,4 +88,11 @@ enum ChatStatus {
   open
   finished
   unfinished
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
 }

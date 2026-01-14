@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { SenderType } from "@prisma/client";
+import { MessageType, SenderType } from "@prisma/client";
 import {
   MessageGroupResult,
   MessageRepository
@@ -27,12 +27,22 @@ export class MessageService extends MessageRepository {
     return results as unknown as MessageGroupResult[];
   }
 
-  async createMessage(chatId: string, content: string, sender: SenderType) {
+  async createMessage(
+    chatId: string,
+    content: string,
+    sender: SenderType,
+    type: MessageType,
+    mediaType: string,
+    mediaUrl: string
+  ) {
     const newMessage = await this.prisma.message.create({
       data: {
         sender,
         content,
-        chatId
+        chatId,
+        type,
+        mediaType,
+        mediaUrl
       }
     });
     this.chatGateway.notifyNewMessage(newMessage);

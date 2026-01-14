@@ -45,16 +45,25 @@ export class WorkerProcessor extends WorkerHost {
         await this.messageService.createMessage(
           chat.id,
           dataMsg.msg,
-          "CUSTOMER"
+          "CUSTOMER",
+          "TEXT",
+          "",
+          ""
         );
-        await sendTextMessage(dataMsg.phone, `*Seja Bem vindo a Rede Match!*
-Para agilizar seu atendimento, com qual empresa você gostaria de falar? 
+        await sendTextMessage(
+          dataMsg.phone,
+          `*Seja Bem vindo a Rede Match!*
+Para agilizar seu atendimento, com qual empresa você gostaria de falar?
 _(Match Pizza, Fihass, Smatch Burger)_
-`);
+`
+        );
         await this.messageService.createMessage(
           chat.id,
           "Mensagem redirecionamento empresa",
-          "BOT"
+          "BOT",
+          "TEXT",
+          "",
+          ""
         );
         return;
       }
@@ -63,8 +72,6 @@ _(Match Pizza, Fihass, Smatch Burger)_
       const handler = this.stepFactory.getHandler(chatData?.currentStep);
       await handler.handle(chatData, dataMsg);
     } catch (error) {
-      console.log(error);
-
       throw error;
     }
   }

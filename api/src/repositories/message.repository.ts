@@ -1,4 +1,4 @@
-import { SenderType } from "@prisma/client";
+import { MessageType, SenderType } from "@prisma/client";
 
 export interface MessageGroupResult {
   sender: string;
@@ -12,7 +12,10 @@ export abstract class MessageRepository {
   abstract createMessage(
     chatId: string,
     content: string,
-    sender: SenderType
+    sender: SenderType,
+    type: MessageType,
+    mediaType: string,
+    mediaUrl: string
   ): any;
 
   abstract getQuantityOfMessages(): Promise<MessageGroupResult[]>;
