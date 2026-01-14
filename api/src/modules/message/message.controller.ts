@@ -35,7 +35,10 @@ export class MessageController {
       const newMessage = await this.messageService.createMessage(
         data.chatId,
         data.content,
-        "AGENT"
+        "AGENT",
+        "TEXT",
+        "",
+        ""
       );
 
       await sendTextMessage(data.phone, data.content);
