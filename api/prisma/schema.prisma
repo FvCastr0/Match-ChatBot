@@ -50,8 +50,7 @@ model Message {
   chat      Chat       @relation(fields: [chatId], references: [id], onDelete: Cascade)
   content   String?
 
-  mediaUrl  String?
-  mediaType String?
+  mediaUrl String?
 
   type MessageType @default(TEXT)
 }

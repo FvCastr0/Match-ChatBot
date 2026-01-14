@@ -23,7 +23,6 @@ export function ProcessRecivedData(data: any): MessageData | null {
     const messageData = (): {
       msg: string;
       type: MessageType;
-      mediaType?: string;
       mediaUrl?: string;
     } => {
       if (message.type === "text") {
@@ -52,8 +51,7 @@ export function ProcessRecivedData(data: any): MessageData | null {
         return {
           msg: "",
           type: message.type.toUpperCase(),
-          mediaType: getExtension(message.image.mime_type),
-          mediaUrl: message.image.id
+          mediaUrl: message.image.id + getExtension(message.image.mime_type)
         };
       }
 
@@ -69,8 +67,7 @@ export function ProcessRecivedData(data: any): MessageData | null {
         return {
           msg: "",
           type: message.type.toUpperCase(),
-          mediaType: getExtension(message.image.mime_type),
-          mediaUrl: message.video.id
+          mediaUrl: message.video.id + getExtension(message.image.mime_type)
         };
       }
 
@@ -110,7 +107,6 @@ export function ProcessRecivedData(data: any): MessageData | null {
       name: hasName(),
       timeLastMsg: Number(message.timestamp),
       type: parsedMessage.type,
-      mediaType: parsedMessage.mediaType,
       mediaUrl: parsedMessage.mediaUrl
     };
   }
