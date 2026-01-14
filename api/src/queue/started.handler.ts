@@ -36,7 +36,6 @@ export class StartedHandler implements StepHandler {
       dataMsg.msg,
       "CUSTOMER",
       "TEXT",
-      "",
       ""
     );
     const businessName = detectCategory(dataMsg.msg, this.companyKeywords);
@@ -55,7 +54,6 @@ export class StartedHandler implements StepHandler {
         "Opção não selecionada",
         "BOT",
         "TEXT",
-        "",
         ""
       );
       return;
@@ -66,7 +64,6 @@ export class StartedHandler implements StepHandler {
       "Mensagem motivo do contato",
       "BOT",
       "TEXT",
-      "",
       ""
     );
     await sendMessageWithTemplate(dataMsg.phone, "contact");

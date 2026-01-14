@@ -78,7 +78,6 @@ export class ContactReasonHandler implements StepHandler {
       dataMsg.msg,
       "CUSTOMER",
       "TEXT",
-      "",
       ""
     );
 
@@ -99,7 +98,6 @@ export class ContactReasonHandler implements StepHandler {
           "Opção não selecionada",
           "BOT",
           "TEXT",
-          "",
           ""
         );
         return;
@@ -118,7 +116,6 @@ export class ContactReasonHandler implements StepHandler {
           "PROBLEMA INTERNO!!!",
           "BOT",
           "TEXT",
-          "",
           ""
         );
       }
@@ -138,7 +135,6 @@ export class ContactReasonHandler implements StepHandler {
         "Perfeito! Envie seu feedback por aqui mesmo!",
         "BOT",
         "TEXT",
-        "",
         ""
       );
       await this.chatService.finishChat(chat.id);
@@ -160,7 +156,6 @@ Explique de forma *breve* o que está acontecendo para haver um melhor redirecio
         "Qual problema você está tendo?",
         "BOT",
         "TEXT",
-        "",
         ""
       );
       await this.chatService.updateContactReason(chat.id, "problem");

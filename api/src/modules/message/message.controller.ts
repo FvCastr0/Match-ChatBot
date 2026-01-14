@@ -37,7 +37,6 @@ export class MessageController {
         data.content,
         "AGENT",
         "TEXT",
-        "",
         ""
       );
 

@@ -47,7 +47,6 @@ export class WorkerProcessor extends WorkerHost {
           dataMsg.msg,
           "CUSTOMER",
           "TEXT",
-          "",
           ""
         );
         await sendTextMessage(
@@ -62,7 +61,6 @@ _(Match Pizza, Fihass, Smatch Burger)_
           "Mensagem redirecionamento empresa",
           "BOT",
           "TEXT",
-          "",
           ""
         );
         return;
