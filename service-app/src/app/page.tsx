@@ -95,7 +95,9 @@ export default function Home() {
                     id: message.id ?? `temp-${Date.now()}`,
                     content: message.content ?? "",
                     sender: message.sender ?? "CUSTOMER",
-                    createdAt: message.createdAt ?? new Date().toISOString()
+                    createdAt: message.createdAt ?? new Date().toISOString(),
+                    type: message.type,
+                    mediaUrl: message.mediaUrl ?? ""
                   }
                 ]
               }
@@ -366,7 +368,10 @@ export default function Home() {
               <div className="flex-1 p-4 ">
                 <div className="flex flex-col gap-3">
                   {selectedChat.messages
-                    .filter(message => message && message.content)
+                    .filter(
+                      message =>
+                        message && (message.content || message.mediaUrl)
+                    )
                     .map((message, index) => (
                       <MessageBubble
                         key={index}
@@ -378,6 +383,8 @@ export default function Home() {
                           hour: "2-digit",
                           minute: "2-digit"
                         })}
+                        type={message.type}
+                        mediaUrl={message.mediaUrl}
                       />
                     ))}
                   <div ref={messagesEndRef} />

@@ -21,5 +21,7 @@ export interface ITicket {
     sender: sender;
     content: string;
     createdAt: Date;
+    mediaUrl: string;
+    type: string;
   }[];
 }
