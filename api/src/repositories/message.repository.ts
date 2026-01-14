@@ -14,7 +14,6 @@ export abstract class MessageRepository {
     content: string,
     sender: SenderType,
     type: MessageType,
-    mediaType: string,
     mediaUrl: string
   ): any;
 

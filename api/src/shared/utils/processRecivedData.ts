@@ -9,7 +9,6 @@ export interface MessageData {
   timeLastMsg: number;
   name: string;
   type: MessageType;
-  mediaType?: string;
   mediaUrl?: string;
 }
 

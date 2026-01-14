@@ -32,7 +32,6 @@ export class MessageService extends MessageRepository {
     content: string,
     sender: SenderType,
     type: MessageType,
-    mediaType: string,
     mediaUrl: string
   ) {
     const newMessage = await this.prisma.message.create({
@@ -41,7 +40,6 @@ export class MessageService extends MessageRepository {
         content,
         chatId,
         type,
-        mediaType,
         mediaUrl
       }
     });
