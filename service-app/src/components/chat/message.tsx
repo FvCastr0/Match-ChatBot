@@ -19,7 +19,7 @@ export default function MessageBubble({
 }: MessageBubbleProps) {
   const alignment = isSender ? "self-end" : "self-start";
   const bubbleColor = isSender ? "bg-blue-900" : "bg-slate-700";
-  const fullMediaUrl = `https://apiredematch.com.br/media/${mediaUrl}`;
+  const fullMediaUrl = `https://api.redematch.com.br/media/${mediaUrl}`;
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
