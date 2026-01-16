@@ -22,13 +22,13 @@ export class AttendantHandler implements StepHandler {
 
     const activeChat = await this.chatService.findAndIsActive(chat.customerId);
     if (activeChat?.status !== "open") return;
-    if (typeof dataMsg.mediaUrl === "string")
-      await this.messageService.createMessage(
-        chat.id,
-        dataMsg.msg,
-        "CUSTOMER",
-        dataMsg.type,
-        dataMsg.mediaUrl
-      );
+
+    await this.messageService.createMessage(
+      chat.id,
+      dataMsg.msg,
+      "CUSTOMER",
+      dataMsg.type,
+      typeof dataMsg.mediaUrl === "string" ? dataMsg.mediaUrl : ""
+    );
   }
 }

@@ -1,6 +1,5 @@
 import { MessageType } from "@prisma/client";
 import { getExtension, saveMedia } from "./saveMedia";
-import { sendTextMessage } from "./sendTextMessage";
 
 export interface MessageData {
   customerId: string;
@@ -18,6 +17,7 @@ export function ProcessRecivedData(data: any): MessageData | null {
 
   if (value?.messages) {
     const message = value.messages[0];
+    console.log(message);
 
     const messageData = (): {
       msg: string;
@@ -48,7 +48,7 @@ export function ProcessRecivedData(data: any): MessageData | null {
         }
 
         return {
-          msg: "",
+          msg: message.image.caption,
           type: message.type.toUpperCase(),
           mediaUrl: message.image.id + getExtension(message.image.mime_type)
         };
@@ -64,21 +64,25 @@ export function ProcessRecivedData(data: any): MessageData | null {
         }
 
         return {
-          msg: "",
+          msg: message.video.caption,
           type: message.type.toUpperCase(),
-          mediaUrl: message.video.id + getExtension(message.image.mime_type)
+          mediaUrl: message.video.id + getExtension(message.video.mime_type)
         };
       }
 
       if (message.type === "audio") {
-        sendTextMessage(
-          message.from,
-          "Nós não escutamos áudios, envie uma mensagem"
-        );
+        if (process.env.ACCESS_TOKEN) {
+          saveMedia(
+            message.audio.url,
+            process.env.ACCESS_TOKEN,
+            message.audio.id
+          );
+        }
 
         return {
           msg: "",
-          type: "AUDIO"
+          type: "AUDIO",
+          mediaUrl: message.audio.id + getExtension(message.audio.mime_type)
         };
       }
 
