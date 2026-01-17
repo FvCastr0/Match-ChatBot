@@ -321,16 +321,21 @@ export default function Home() {
 
                                           <div className="flex flex-col max-h-[400px] overflow-y-auto my-3">
                                             {chat.messages.map(message => (
-                                              <div
+                                              <MessageBubble
                                                 key={message.id}
-                                                className={`my-1 ${
-                                                  message.sender === "CUSTOMER"
-                                                    ? "self-start bg-amber-400 px-2 py-1 rounded-md"
-                                                    : "self-end bg-amber-600 px-2 py-1 rounded-md"
-                                                }`}
-                                              >
-                                                <p>{message.content}</p>
-                                              </div>
+                                                isSender={
+                                                  message.sender !== "CUSTOMER"
+                                                }
+                                                text={message.content}
+                                                createdAt={new Date(
+                                                  message.createdAt
+                                                ).toLocaleTimeString([], {
+                                                  hour: "2-digit",
+                                                  minute: "2-digit"
+                                                })}
+                                                type={message.type}
+                                                mediaUrl={message.mediaUrl}
+                                              />
                                             ))}
                                           </div>
 

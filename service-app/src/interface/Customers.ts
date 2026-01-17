@@ -21,6 +21,9 @@ export interface CustomerData {
       createdAt: string;
       messages: [
         {
+          createdAt: string | number | Date;
+          type: string;
+          mediaUrl: string;
           content: string;
           sender: string;
           id: string;
