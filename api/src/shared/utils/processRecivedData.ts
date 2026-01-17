@@ -17,7 +17,6 @@ export function ProcessRecivedData(data: any): MessageData | null {
 
   if (value?.messages) {
     const message = value.messages[0];
-    console.log(message);
 
     const messageData = (): {
       msg: string;

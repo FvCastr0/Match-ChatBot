@@ -24,6 +24,8 @@ export default function MessageBubble({
   const [isPlaying, setIsPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [src, setSrc] = useState(fullMediaUrl);
+  const [attempts, setAttempts] = useState(0);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -63,6 +65,18 @@ export default function MessageBubble({
 
   const progress = duration ? (current / duration) * 100 : 0;
 
+  const handleError = () => {
+    if (attempts < 3) {
+      setTimeout(() => {
+        if (typeof fullMediaUrl === "string") {
+          const separator = fullMediaUrl.includes("?") ? "&" : "?";
+          setSrc(`${fullMediaUrl}${separator}retry=${attempts}`);
+        }
+        setAttempts(prev => prev + 1);
+      }, 1500);
+    }
+  };
+
   return (
     <div
       className={`
@@ -83,6 +97,7 @@ export default function MessageBubble({
               quality={80}
               priority={false}
               onClick={() => window.open(fullMediaUrl, "_blank")}
+              onError={handleError}
             />
           </div>
         )}
@@ -90,7 +105,11 @@ export default function MessageBubble({
         {type === "VIDEO" && fullMediaUrl && (
           <div className="mb-2 w-60">
             <video controls className="w-full rounded-md">
-              <source src={fullMediaUrl} type="video/mp4" />
+              <source
+                src={fullMediaUrl}
+                type="video/mp4"
+                onError={handleError}
+              />
               Seu navegador não suporta vídeos.
             </video>
           </div>
@@ -98,7 +117,7 @@ export default function MessageBubble({
 
         {type === "AUDIO" && fullMediaUrl && (
           <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-            <audio ref={audioRef} src={fullMediaUrl} />
+            <audio ref={audioRef} src={fullMediaUrl} onError={handleError} />
 
             <button
               onClick={togglePlay}
