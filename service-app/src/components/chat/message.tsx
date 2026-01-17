@@ -19,29 +19,33 @@ export default function MessageBubble({
 }: MessageBubbleProps) {
   const alignment = isSender ? "self-end" : "self-start";
   const bubbleColor = isSender ? "bg-blue-900" : "bg-slate-700";
-  const fullMediaUrl = `https://api.redematch.com.br/media/${mediaUrl}`;
+
+  const initialUrl = mediaUrl
+    ? mediaUrl.startsWith("http")
+      ? mediaUrl
+      : `https://api.redematch.com.br/media/${mediaUrl}`
+    : "";
+
+  const [src, setSrc] = useState(initialUrl);
+  const [attempts, setAttempts] = useState(0);
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [src, setSrc] = useState(fullMediaUrl);
-  const [attempts, setAttempts] = useState(0);
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const onTimeUpdate = () => setCurrent(audio.currentTime);
-    const onLoaded = () => setDuration(audio.duration);
-
-    audio.addEventListener("timeupdate", onTimeUpdate);
-    audio.addEventListener("loadedmetadata", onLoaded);
-
-    return () => {
-      audio.removeEventListener("timeupdate", onTimeUpdate);
-      audio.removeEventListener("loadedmetadata", onLoaded);
-    };
-  }, []);
+    const newUrl = mediaUrl
+      ? mediaUrl.startsWith("http")
+        ? mediaUrl
+        : `https://api.redematch.com.br/media/${mediaUrl}`
+      : "";
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSrc(newUrl);
+    setAttempts(0);
+    setIsPlaying(false);
+    setCurrent(0);
+  }, [mediaUrl]);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -51,11 +55,11 @@ export default function MessageBubble({
     } else {
       audioRef.current.play();
     }
-
     setIsPlaying(!isPlaying);
   };
 
   const formatTime = (time: number) => {
+    if (!time) return "0:00";
     const min = Math.floor(time / 60);
     const sec = Math.floor(time % 60)
       .toString()
@@ -67,13 +71,14 @@ export default function MessageBubble({
 
   const handleError = () => {
     if (attempts < 3) {
+      console.log(`Tentando recarregar mídia... Tentativa ${attempts + 1}`);
       setTimeout(() => {
-        if (typeof fullMediaUrl === "string") {
-          const separator = fullMediaUrl.includes("?") ? "&" : "?";
-          setSrc(`${fullMediaUrl}${separator}retry=${attempts}`);
-        }
+        setSrc(prevSrc => {
+          const separator = prevSrc.includes("?") ? "&" : "?";
+          return `${prevSrc}${separator}retry=${Date.now()}`;
+        });
         setAttempts(prev => prev + 1);
-      }, 1500);
+      }, 2000);
     }
   };
 
@@ -82,59 +87,80 @@ export default function MessageBubble({
       className={`
            ${alignment}
            ${bubbleColor}
-           text-white rounded-lg p-2 max-w-[50%] flex flex-col shadow-md
+           text-white rounded-lg p-2 max-w-[70%] flex flex-col shadow-md
          `}
     >
       <div>
-        {type === "IMAGE" && fullMediaUrl && (
-          <div className="mb-2 relative w-60 h-60">
+        {type === "IMAGE" && src && (
+          <div className="mb-2 relative w-60 h-60 aspect-square">
             <Image
-              src={fullMediaUrl}
+              src={src}
               alt="Imagem enviada"
               fill
               className="rounded-md object-cover cursor-pointer hover:opacity-90 transition-opacity"
               sizes="(max-width: 768px) 100vw, 240px"
               quality={80}
               priority={false}
-              onClick={() => window.open(fullMediaUrl, "_blank")}
+              onClick={() => window.open(src, "_blank")}
               onError={handleError}
             />
           </div>
         )}
 
-        {type === "VIDEO" && fullMediaUrl && (
+        {type === "VIDEO" && src && (
           <div className="mb-2 w-60">
-            <video controls className="w-full rounded-md">
-              <source
-                src={fullMediaUrl}
-                type="video/mp4"
-                onError={handleError}
-              />
+            <video
+              controls
+              className="w-full rounded-md bg-black"
+              src={src}
+              preload="metadata"
+              onError={handleError}
+            >
               Seu navegador não suporta vídeos.
             </video>
           </div>
         )}
 
-        {type === "AUDIO" && fullMediaUrl && (
-          <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-            <audio ref={audioRef} src={fullMediaUrl} onError={handleError} />
+        {(type === "AUDIO" || type === "VOICE") && src && (
+          <div className="flex items-center gap-3 rounded-lg px-3 py-2 bg-black/20 w-60">
+            <audio
+              ref={audioRef}
+              src={src}
+              preload="metadata"
+              onError={handleError}
+              onTimeUpdate={e => setCurrent(e.currentTarget.currentTime)}
+              onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
+              onEnded={() => setIsPlaying(false)}
+            />
 
             <button
               onClick={togglePlay}
-              className="w-9 h-9 flex items-center justify-center rounded-full bg-white text-black hover:scale-105 transition"
+              className="w-8 h-8 min-w-[32px] flex items-center justify-center rounded-full bg-white text-black hover:scale-105 transition"
             >
-              {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+              {isPlaying ? (
+                <Pause size={14} className="fill-current" />
+              ) : (
+                <Play size={14} className="fill-current ml-0.5" />
+              )}
             </button>
 
-            <div className="flex-1">
-              <div className="h-1 bg-white/30 rounded-full overflow-hidden">
+            <div className="flex-1 min-w-0">
+              <div
+                className="h-1 bg-white/30 rounded-full overflow-hidden cursor-pointer"
+                onClick={e => {
+                  if (!audioRef.current || !duration) return;
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const percent = (e.clientX - rect.left) / rect.width;
+                  audioRef.current.currentTime = percent * duration;
+                }}
+              >
                 <div
-                  className="h-full bg-white"
+                  className="h-full bg-white transition-all duration-100 ease-linear"
                   style={{ width: `${progress}%` }}
                 />
               </div>
 
-              <div className="flex justify-between text-[10px] text-gray-300 mt-1">
+              <div className="flex justify-between text-[10px] text-gray-300 mt-1 font-mono">
                 <span>{formatTime(current)}</span>
                 <span>{formatTime(duration)}</span>
               </div>
@@ -145,7 +171,9 @@ export default function MessageBubble({
         {text && <p className="text-sm whitespace-pre-wrap">{text}</p>}
       </div>
 
-      <span className="text-xs text-gray-400 mt-1">{createdAt}</span>
+      <span className="text-[10px] text-gray-300 mt-1 self-end opacity-80">
+        {createdAt}
+      </span>
     </div>
   );
 }
