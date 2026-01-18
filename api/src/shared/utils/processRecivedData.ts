@@ -11,18 +11,20 @@ export interface MessageData {
   mediaUrl?: string;
 }
 
-export function ProcessRecivedData(data: any): MessageData | null {
+export async function ProcessRecivedData(
+  data: any
+): Promise<MessageData | null> {
   const changes = data.entry?.[0]?.changes?.[0];
   const value = changes?.value;
 
   if (value?.messages) {
     const message = value.messages[0];
 
-    const messageData = (): {
+    const messageData = async (): Promise<{
       msg: string;
       type: MessageType;
       mediaUrl?: string;
-    } => {
+    }> => {
       if (message.type === "text") {
         return {
           msg: message.text.body,
@@ -39,7 +41,7 @@ export function ProcessRecivedData(data: any): MessageData | null {
 
       if (message.type === "image") {
         if (process.env.ACCESS_TOKEN) {
-          saveMedia(
+          await saveMedia(
             message.image.url,
             process.env.ACCESS_TOKEN,
             message.image.id
@@ -55,7 +57,7 @@ export function ProcessRecivedData(data: any): MessageData | null {
 
       if (message.type === "video") {
         if (process.env.ACCESS_TOKEN) {
-          saveMedia(
+          await saveMedia(
             message.video.url,
             process.env.ACCESS_TOKEN,
             message.video.id
@@ -71,7 +73,7 @@ export function ProcessRecivedData(data: any): MessageData | null {
 
       if (message.type === "audio") {
         if (process.env.ACCESS_TOKEN) {
-          saveMedia(
+          await saveMedia(
             message.audio.url,
             process.env.ACCESS_TOKEN,
             message.audio.id
@@ -100,7 +102,7 @@ export function ProcessRecivedData(data: any): MessageData | null {
       }
     }
 
-    const parsedMessage = messageData();
+    const parsedMessage = await messageData();
 
     return {
       customerId: message.from,
