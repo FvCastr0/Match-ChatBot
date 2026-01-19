@@ -17,121 +17,95 @@ export async function ProcessRecivedData(
   const changes = data.entry?.[0]?.changes?.[0];
   const value = changes?.value;
 
-  if (value?.messages) {
-    const message = value.messages[0];
+  if (!value?.messages) return null;
 
-    const messageData = async (): Promise<{
-      msg: string;
-      type: MessageType;
-      mediaUrl?: string;
-    }> => {
-      if (message.type === "text") {
-        return {
-          msg: message.text.body,
-          type: message.type.toUpperCase()
-        };
-      }
+  const message = value.messages[0];
 
-      if (message.type === "button") {
-        return {
-          msg: message.button.text,
-          type: message.type.toUpperCase()
-        };
-      }
+  const triggerSaveMedia = (url: string, id: string) => {
+    if (process.env.ACCESS_TOKEN) {
+      saveMedia(url, process.env.ACCESS_TOKEN, id).catch(err => {
+        console.error(`Erro ao salvar media em background (ID: ${id}):`, err);
+      });
+    }
+  };
 
-      if (message.type === "image") {
-        let mediaUrl: string | undefined;
+  async function messageData(): Promise<{
+    msg: string;
+    type: MessageType;
+    mediaUrl?: string;
+  }> {
+    if (message.type === "text") {
+      return {
+        msg: message.text.body,
+        type: message.type.toUpperCase() as MessageType
+      };
+    }
 
-        if (process.env.ACCESS_TOKEN) {
-          const saved = await saveMedia(
-            message.image.url,
-            process.env.ACCESS_TOKEN,
-            message.image.id
-          );
+    if (message.type === "button") {
+      return {
+        msg: message.button.text,
+        type: message.type.toUpperCase() as MessageType
+      };
+    }
 
-          if (saved) {
-            mediaUrl = message.image.id + getExtension(message.image.mime_type);
-          }
-        }
+    if (message.type === "image") {
+      const extension = getExtension(message.image.mime_type);
+      const mediaUrl = message.image.id + extension;
 
-        return {
-          msg: message.image.caption ?? "",
-          type: message.type.toUpperCase(),
-          ...(mediaUrl && { mediaUrl })
-        };
-      }
+      triggerSaveMedia(message.image.url, message.image.id);
 
-      if (message.type === "video") {
-        let mediaUrl: string | undefined;
+      return {
+        msg: message.image.caption ?? "",
+        type: message.type.toUpperCase() as MessageType,
+        mediaUrl: mediaUrl
+      };
+    }
 
-        if (process.env.ACCESS_TOKEN) {
-          const saved = await saveMedia(
-            message.video.url,
-            process.env.ACCESS_TOKEN,
-            message.video.id
-          );
+    if (message.type === "video") {
+      const extension = getExtension(message.video.mime_type);
+      const mediaUrl = message.video.id + extension;
 
-          if (saved) {
-            mediaUrl = message.video.id + getExtension(message.video.mime_type);
-          }
-        }
+      triggerSaveMedia(message.video.url, message.video.id);
 
-        return {
-          msg: message.video.caption ?? "",
-          type: "VIDEO",
-          ...(mediaUrl && { mediaUrl })
-        };
-      }
+      return {
+        msg: message.video.caption ?? "",
+        type: "VIDEO",
+        mediaUrl: mediaUrl
+      };
+    }
 
-      if (message.type === "audio") {
-        let mediaUrl: string | undefined;
+    if (message.type === "audio") {
+      const extension = getExtension(message.audio.mime_type);
+      const mediaUrl = message.audio.id + extension;
 
-        if (process.env.ACCESS_TOKEN) {
-          const saved = await saveMedia(
-            message.audio.url,
-            process.env.ACCESS_TOKEN,
-            message.audio.id
-          );
-
-          if (saved) {
-            mediaUrl = message.audio.id + getExtension(message.audio.mime_type);
-          }
-        }
-
-        return {
-          msg: "",
-          type: "AUDIO",
-          ...(mediaUrl && { mediaUrl })
-        };
-      }
+      triggerSaveMedia(message.audio.url, message.audio.id);
 
       return {
         msg: "",
-        type: "TEXT"
+        type: "AUDIO",
+        mediaUrl: mediaUrl
       };
-    };
-
-    function hasName() {
-      if (value.contacts === undefined) {
-        return "";
-      } else {
-        if (value.contacts[0].profile.name === "") return "";
-        else return value.contacts[0].profile.name;
-      }
     }
 
-    const parsedMessage = await messageData();
-
     return {
-      customerId: message.from,
-      phone: message.from,
-      msg: parsedMessage.msg,
-      name: hasName(),
-      timeLastMsg: Number(message.timestamp),
-      type: parsedMessage.type,
-      mediaUrl: parsedMessage.mediaUrl
+      msg: "",
+      type: "TEXT"
     };
   }
 
-  return null;
+  function hasName(): string {
+    return value.contacts?.[0]?.profile?.name ?? "";
+  }
+
+  const parsedMessage = await messageData();
+
+  return {
+    customerId: message.from,
+    phone: message.from,
+    msg: parsedMessage.msg,
+    name: hasName(),
+    timeLastMsg: Number(message.timestamp),
+    type: parsedMessage.type,
+    mediaUrl: parsedMessage.mediaUrl
+  };
 }
