@@ -40,50 +40,68 @@ export async function ProcessRecivedData(
       }
 
       if (message.type === "image") {
+        let mediaUrl: string | undefined;
+
         if (process.env.ACCESS_TOKEN) {
-          await saveMedia(
+          const saved = await saveMedia(
             message.image.url,
             process.env.ACCESS_TOKEN,
             message.image.id
           );
+
+          if (saved) {
+            mediaUrl = message.image.id + getExtension(message.image.mime_type);
+          }
         }
 
         return {
-          msg: message.image.caption,
+          msg: message.image.caption ?? "",
           type: message.type.toUpperCase(),
-          mediaUrl: message.image.id + getExtension(message.image.mime_type)
+          ...(mediaUrl && { mediaUrl })
         };
       }
 
       if (message.type === "video") {
+        let mediaUrl: string | undefined;
+
         if (process.env.ACCESS_TOKEN) {
-          await saveMedia(
+          const saved = await saveMedia(
             message.video.url,
             process.env.ACCESS_TOKEN,
             message.video.id
           );
+
+          if (saved) {
+            mediaUrl = message.video.id + getExtension(message.video.mime_type);
+          }
         }
 
         return {
-          msg: message.video.caption,
-          type: message.type.toUpperCase(),
-          mediaUrl: message.video.id + getExtension(message.video.mime_type)
+          msg: message.video.caption ?? "",
+          type: "VIDEO",
+          ...(mediaUrl && { mediaUrl })
         };
       }
 
       if (message.type === "audio") {
+        let mediaUrl: string | undefined;
+
         if (process.env.ACCESS_TOKEN) {
-          await saveMedia(
+          const saved = await saveMedia(
             message.audio.url,
             process.env.ACCESS_TOKEN,
             message.audio.id
           );
+
+          if (saved) {
+            mediaUrl = message.audio.id + getExtension(message.audio.mime_type);
+          }
         }
 
         return {
           msg: "",
           type: "AUDIO",
-          mediaUrl: message.audio.id + getExtension(message.audio.mime_type)
+          ...(mediaUrl && { mediaUrl })
         };
       }
 
