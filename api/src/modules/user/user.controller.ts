@@ -31,6 +31,7 @@ export class UserController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post("create")
   async createUser(@Body() createUserDto: CreateUserDto, @Res() res: Response) {
     try {

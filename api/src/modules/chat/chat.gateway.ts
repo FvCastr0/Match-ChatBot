@@ -11,7 +11,7 @@ import { Server, Socket } from "socket.io";
 @UseFilters(new BaseWsExceptionFilter())
 @WebSocketGateway({
   cors: {
-    origin: "https://redematch.com.br",
+    origin: process.env.FRONTEND_URL,
     methods: ["GET", "POST", "DELETE", "PATCH"],
     credentials: true
   }

@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "api.redematch.com.br",
+        hostname: process.env.NEXT_PUBLIC_BACKEND_URL!,
         pathname: "/media/**"
       }
     ]

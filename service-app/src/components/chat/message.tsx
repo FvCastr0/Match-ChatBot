@@ -23,7 +23,7 @@ export default function MessageBubble({
   const initialUrl = mediaUrl
     ? mediaUrl.startsWith("http")
       ? mediaUrl
-      : `https://api.redematch.com.br/media/${mediaUrl}`
+      : `${process.env.NEXT_PUBLIC_BACKEND_URL}${mediaUrl}`
     : "";
 
   const [src, setSrc] = useState(initialUrl);
@@ -38,7 +38,7 @@ export default function MessageBubble({
     const newUrl = mediaUrl
       ? mediaUrl.startsWith("http")
         ? mediaUrl
-        : `https://api.redematch.com.br/media/${mediaUrl}`
+        : `${process.env.NEXT_PUBLIC_BACKEND_URL}${mediaUrl}`
       : "";
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSrc(newUrl);

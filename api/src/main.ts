@@ -12,7 +12,7 @@ async function bootstrap() {
   );
 
   app.enableCors({
-    origin: "https://redematch.com.br",
+    origin: process.env.FRONTEND_URL,
     credentials: true
   });
 

@@ -46,6 +46,7 @@ import { io, Socket } from "socket.io-client";
 import { ITicket } from "../interface/ITicket";
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+type MessageType = "TEXT" | "IMAGE" | "AUDIO" | "VIDEO";
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -84,31 +85,39 @@ export default function Home() {
       const message = payload.message ?? payload;
       const chatId = payload.chatId ?? message.chatId;
 
-      setTickets(prev =>
-        prev.map(ticket =>
-          String(ticket.id) === String(chatId)
-            ? {
-                ...ticket,
-                messages: [
-                  ...ticket.messages,
-                  {
-                    id: message.id ?? `temp-${Date.now()}`,
-                    content: message.content ?? "",
-                    sender: message.sender ?? "CUSTOMER",
-                    createdAt: message.createdAt ?? new Date().toISOString(),
-                    type: message.type,
-                    mediaUrl: message.mediaUrl ?? ""
-                  }
-                ]
-              }
-            : ticket
-        )
-      );
+      setTickets(prev => {
+        const ticketIndex = prev.findIndex(
+          t => String(t.id) === String(chatId)
+        );
+
+        if (ticketIndex === -1) return prev;
+
+        const ticket = prev[ticketIndex];
+
+        const updatedTicket = {
+          ...ticket,
+          messages: [
+            ...ticket.messages,
+            {
+              id: message.id ?? `temp-${Date.now()}`,
+              content: message.content ?? "",
+              sender: message.sender ?? "CUSTOMER",
+              createdAt: message.createdAt ?? new Date().toISOString(),
+              type: message.type,
+              mediaUrl: message.mediaUrl ?? ""
+            }
+          ]
+        };
+
+        const rest = prev.filter(t => String(t.id) !== String(chatId));
+
+        return [updatedTicket, ...rest];
+      });
     };
 
     const handleNewTicket = (ticket: ITicket) => {
       if (!ticketsRef.current.some(t => t.id === ticket.id)) {
-        setTickets(prev => [...prev, ticket]);
+        setTickets(prev => [ticket, ...prev]);
       }
     };
 
@@ -177,6 +186,23 @@ export default function Home() {
     );
   };
 
+  function getLastMessagePreview({
+    content,
+    type
+  }: {
+    content: string;
+    type: string;
+  }): string {
+    console.log(type);
+
+    if (content === "" && type === "TEXT") return "Sem mensagens";
+    if (type === "IMAGE") return "Imagem";
+    if (type === "VIDEO") return "Vídeo";
+    if (type === "AUDIO") return "Áudio";
+
+    return content;
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 h-screen">
       <ScrollArea
@@ -203,10 +229,18 @@ export default function Home() {
                 business={ticket.business.name}
                 customerName={ticket.customer.name}
                 customerPhone={ticket.customer.phone}
-                contactReason={
-                  ticket.messages.at(-1)?.content || "Sem mensagens"
-                }
+                contactReason={getLastMessagePreview({
+                  content:
+                    ticket.messages?.[ticket.messages.length - 1]?.content,
+                  type: ticket.messages?.[ticket.messages.length - 1]?.type
+                })}
                 isSelected={selectedChatId === ticket.id}
+                isLastMsgFromCustomer={
+                  ticket.messages?.[ticket.messages.length - 1]?.sender ===
+                  "CUSTOMER"
+                    ? true
+                    : false
+                }
               />
             </div>
           ))}
