@@ -23,7 +23,7 @@ export default function MessageBubble({
   const initialUrl = mediaUrl
     ? mediaUrl.startsWith("http")
       ? mediaUrl
-      : `${process.env.NEXT_PUBLIC_BACKEND_URL}${mediaUrl}`
+      : `${process.env.NEXT_PUBLIC_BACKEND_URL}/media/${mediaUrl}`
     : "";
 
   const [src, setSrc] = useState(initialUrl);
