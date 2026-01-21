@@ -34,6 +34,11 @@ import { CustomerData } from "@/interface/Customers";
 import { logoMap } from "@/lib/logoMap";
 import { findCustomerChats } from "@/services/findCustomerChats";
 import { getTickets } from "@/services/getTickets";
+import {
+  ensureNotificationPermission,
+  isTabActive,
+  notifyNewMessage
+} from "@/services/notify";
 import { sendMessage } from "@/services/sendMessage";
 import { ArrowLeft, Info, Send } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -81,7 +86,7 @@ export default function Home() {
     socketRef.current = socket;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleNewMessage = (payload: any) => {
+    const handleNewMessage = async (payload: any) => {
       const message = payload.message ?? payload;
       const chatId = payload.chatId ?? message.chatId;
 
@@ -113,6 +118,36 @@ export default function Home() {
 
         return [updatedTicket, ...rest];
       });
+
+      const isCurrentChat = selectedChatIdRef.current === String(chatId);
+
+      const tabActive = isTabActive();
+
+      if (isCurrentChat && tabActive) {
+      } else {
+        const allowed = await ensureNotificationPermission();
+        if (message.sender !== "CUSTOMER") {
+          return;
+        }
+        const customerData = ticketsRef.current.find(
+          t => String(t.id) === String(chatId)
+        );
+
+        if (allowed && customerData?.currentStep === "attendant") {
+          notifyNewMessage({
+            title: customerData?.customer.name,
+            body:
+              message.type === "TEXT"
+                ? message.content
+                : message.type === "IMAGE"
+                  ? "📷 Imagem"
+                  : message.type === "VIDEO"
+                    ? "🎥 Vídeo"
+                    : "🎵 Áudio",
+            chatId
+          });
+        }
+      }
     };
 
     const handleNewTicket = (ticket: ITicket) => {
@@ -137,6 +172,20 @@ export default function Home() {
       socketRef.current = null;
     };
   }, [status, session?.user.accessToken]);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const { chatId } = (event as CustomEvent).detail;
+
+      setSelectedChatId(String(chatId));
+    };
+
+    window.addEventListener("notification:open-chat", handler);
+
+    return () => {
+      window.removeEventListener("notification:open-chat", handler);
+    };
+  }, []);
 
   useEffect(() => {
     if (status !== "authenticated" || !session?.user.accessToken) return;
@@ -193,8 +242,6 @@ export default function Home() {
     content: string;
     type: string;
   }): string {
-    console.log(type);
-
     if (content === "" && type === "TEXT") return "Sem mensagens";
     if (type === "IMAGE") return "Imagem";
     if (type === "VIDEO") return "Vídeo";
@@ -211,7 +258,7 @@ export default function Home() {
         } md:block md:col-span-3 overflow-y-auto`}
       >
         <div className="p-4 space-y-1">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-6 flex-wrap gap-1">
             <DialogNewChat
               onChatCreated={setSelectedChatId}
               token={session?.user.accessToken ? session.user.accessToken : ""}
