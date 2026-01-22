@@ -21,7 +21,7 @@ export default function MessageBubble({
   const bubbleColor = isSender ? "bg-blue-900" : "bg-slate-700";
 
   const initialUrl = mediaUrl
-    ? mediaUrl.startsWith("http")
+    ? mediaUrl.startsWith("https")
       ? mediaUrl
       : `${process.env.NEXT_PUBLIC_BACKEND_URL}/media/${mediaUrl}`
     : "";
@@ -36,9 +36,9 @@ export default function MessageBubble({
 
   useEffect(() => {
     const newUrl = mediaUrl
-      ? mediaUrl.startsWith("http")
+      ? mediaUrl.startsWith("https")
         ? mediaUrl
-        : `${process.env.NEXT_PUBLIC_BACKEND_URL}${mediaUrl}`
+        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/media/${mediaUrl}`
       : "";
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSrc(newUrl);
@@ -69,19 +69,6 @@ export default function MessageBubble({
 
   const progress = duration ? (current / duration) * 100 : 0;
 
-  const handleError = () => {
-    if (attempts < 3) {
-      console.log(`Tentando recarregar mídia... Tentativa ${attempts + 1}`);
-      setTimeout(() => {
-        setSrc(prevSrc => {
-          const separator = prevSrc.includes("?") ? "&" : "?";
-          return `${prevSrc}${separator}retry=${Date.now()}`;
-        });
-        setAttempts(prev => prev + 1);
-      }, 2000);
-    }
-  };
-
   return (
     <div
       className={`
@@ -102,7 +89,6 @@ export default function MessageBubble({
               quality={80}
               priority={false}
               onClick={() => window.open(src, "_blank")}
-              onError={handleError}
             />
           </div>
         )}
@@ -114,7 +100,6 @@ export default function MessageBubble({
               className="w-full rounded-md bg-black"
               src={src}
               preload="metadata"
-              onError={handleError}
             >
               Seu navegador não suporta vídeos.
             </video>
@@ -127,7 +112,6 @@ export default function MessageBubble({
               ref={audioRef}
               src={src}
               preload="metadata"
-              onError={handleError}
               onTimeUpdate={e => setCurrent(e.currentTarget.currentTime)}
               onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
               onEnded={() => setIsPlaying(false)}
