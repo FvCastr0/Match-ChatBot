@@ -1,5 +1,4 @@
 import { Pause, Play } from "lucide-react";
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
 type MessageBubbleProps = {
@@ -69,6 +68,29 @@ export default function MessageBubble({
 
   const progress = duration ? (current / duration) * 100 : 0;
 
+  const handleMediaError = (
+    e: React.SyntheticEvent<
+      HTMLImageElement | HTMLVideoElement | HTMLAudioElement
+    >
+  ) => {
+    const element = e.currentTarget;
+
+    element.onerror = null;
+
+    if (element instanceof HTMLImageElement) {
+      element.src = mediaUrl;
+    }
+
+    if (element instanceof HTMLVideoElement) {
+      element.poster = mediaUrl;
+      element.pause();
+    }
+
+    if (element instanceof HTMLAudioElement) {
+      element.pause();
+    }
+  };
+
   return (
     <div
       className={`
@@ -80,15 +102,13 @@ export default function MessageBubble({
       <div>
         {type === "IMAGE" && src && (
           <div className="mb-2 relative w-60 h-60 aspect-square">
-            <Image
+            <img
               src={src}
               alt="Imagem enviada"
-              fill
-              className="rounded-md object-cover cursor-pointer hover:opacity-90 transition-opacity"
-              sizes="(max-width: 768px) 100vw, 240px"
-              quality={80}
-              priority={false}
+              className="w-full h-full rounded-md object-cover cursor-pointer hover:opacity-90 transition-opacity"
               onClick={() => window.open(src, "_blank")}
+              onError={handleMediaError}
+              loading="lazy"
             />
           </div>
         )}
@@ -100,6 +120,7 @@ export default function MessageBubble({
               className="w-full rounded-md bg-black"
               src={src}
               preload="metadata"
+              onError={handleMediaError}
             >
               Seu navegador não suporta vídeos.
             </video>
@@ -115,6 +136,7 @@ export default function MessageBubble({
               onTimeUpdate={e => setCurrent(e.currentTarget.currentTime)}
               onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
               onEnded={() => setIsPlaying(false)}
+              onError={handleMediaError}
             />
 
             <button
