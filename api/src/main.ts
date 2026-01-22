@@ -1,5 +1,6 @@
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
+import helmet from "helmet";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
@@ -15,6 +16,8 @@ async function bootstrap() {
     origin: process.env.FRONTEND_URL,
     credentials: true
   });
+
+  app.use(helmet());
 
   await app.listen(process.env.PORT ?? 3000);
 }

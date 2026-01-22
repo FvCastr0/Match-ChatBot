@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { ThrottlerModule } from "@nestjs/throttler";
 
 import { BullModule } from "@nestjs/bullmq";
 import { ScheduleModule } from "@nestjs/schedule";
@@ -25,6 +26,15 @@ import { PrismaModule } from "./shared/lib/prisma/prisma.module";
         name: process.env.NODE_ENV !== "production" ? "queue-system" : "",
         port: process.env.NODE_ENV !== "production" ? 6379 : undefined
       }
+    }),
+
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60000,
+          limit: 200
+        }
+      ]
     }),
 
     ScheduleModule.forRoot(),
