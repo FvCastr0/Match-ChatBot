@@ -22,9 +22,7 @@ import { PrismaModule } from "./shared/lib/prisma/prisma.module";
     }),
     BullModule.forRoot({
       connection: {
-        url: process.env.NODE_ENV === "production" ? process.env.REDIS_URL : "",
-        name: process.env.NODE_ENV !== "production" ? "queue-system" : "",
-        port: process.env.NODE_ENV !== "production" ? 6379 : undefined
+        url: process.env.REDIS_URL
       }
     }),
 

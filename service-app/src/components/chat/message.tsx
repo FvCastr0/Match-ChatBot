@@ -1,5 +1,5 @@
 import { Pause, Play } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 type MessageBubbleProps = {
   text: string;
@@ -19,32 +19,15 @@ export default function MessageBubble({
   const alignment = isSender ? "self-end" : "self-start";
   const bubbleColor = isSender ? "bg-blue-900" : "bg-slate-700";
 
-  const initialUrl = mediaUrl
-    ? mediaUrl.startsWith("https")
-      ? mediaUrl
-      : `${process.env.NEXT_PUBLIC_BACKEND_URL}/media/${mediaUrl}`
-    : "";
-
-  const [src, setSrc] = useState(initialUrl);
-  const [attempts, setAttempts] = useState(0);
-
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  useEffect(() => {
-    const newUrl = mediaUrl
-      ? mediaUrl.startsWith("https")
-        ? mediaUrl
-        : `${process.env.NEXT_PUBLIC_BACKEND_URL}/media/${mediaUrl}`
-      : "";
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSrc(newUrl);
-    setAttempts(0);
-    setIsPlaying(false);
-    setCurrent(0);
-  }, [mediaUrl]);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
+
+  const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/media/${mediaUrl}`;
 
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -69,25 +52,19 @@ export default function MessageBubble({
   const progress = duration ? (current / duration) * 100 : 0;
 
   const handleMediaError = (
-    e: React.SyntheticEvent<
-      HTMLImageElement | HTMLVideoElement | HTMLAudioElement
-    >
+    e: React.SyntheticEvent<HTMLAudioElement | HTMLVideoElement, Event>
   ) => {
-    const element = e.currentTarget;
+    const target = e.currentTarget;
 
-    element.onerror = null;
-
-    if (element instanceof HTMLImageElement) {
-      element.src = mediaUrl;
-    }
-
-    if (element instanceof HTMLVideoElement) {
-      element.poster = mediaUrl;
-      element.pause();
-    }
-
-    if (element instanceof HTMLAudioElement) {
-      element.pause();
+    if (retryCount < MAX_RETRIES) {
+      setTimeout(() => {
+        setRetryCount(prev => prev + 1);
+        target.load();
+      }, 2000);
+    } else {
+      console.error(
+        "Limite de tentativas de carregamento atingido. Verifique a conexão ou o arquivo no servidor."
+      );
     }
   };
 
@@ -100,25 +77,31 @@ export default function MessageBubble({
          `}
     >
       <div>
-        {type === "IMAGE" && src && (
+        {type === "IMAGE" && (
           <div className="mb-2 relative w-60 h-60 aspect-square">
             <img
-              src={src}
+              src={url}
+              loading="lazy"
+              crossOrigin="anonymous"
               alt="Imagem enviada"
               className="w-full h-full rounded-md object-cover cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={() => window.open(src, "_blank")}
-              onError={handleMediaError}
-              loading="lazy"
+              onClick={() =>
+                window.open(
+                  `${process.env.NEXT_PUBLIC_BACKEND_URL}/media/${mediaUrl}`,
+                  "_blank"
+                )
+              }
             />
           </div>
         )}
 
-        {type === "VIDEO" && src && (
+        {type === "VIDEO" && (
           <div className="mb-2 w-60">
             <video
               controls
+              crossOrigin="anonymous"
               className="w-full rounded-md bg-black"
-              src={src}
+              src={url}
               preload="metadata"
               onError={handleMediaError}
             >
@@ -127,11 +110,12 @@ export default function MessageBubble({
           </div>
         )}
 
-        {(type === "AUDIO" || type === "VOICE") && src && (
+        {(type === "AUDIO" || type === "VOICE") && (
           <div className="flex items-center gap-3 rounded-lg px-3 py-2 bg-black/20 w-60">
             <audio
               ref={audioRef}
-              src={src}
+              src={url}
+              crossOrigin="anonymous"
               preload="metadata"
               onTimeUpdate={e => setCurrent(e.currentTarget.currentTime)}
               onLoadedMetadata={e => setDuration(e.currentTarget.duration)}
