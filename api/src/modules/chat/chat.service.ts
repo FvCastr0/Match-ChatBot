@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
 import { Chat, ChatStatus, ContactReason, Steps } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { ChatRepository } from "src/repositories/chat.repository";
@@ -89,13 +90,20 @@ export class ChatService extends ChatRepository {
       });
   }
 
-  // @Cron(CronExpression.EVERY_DAY_AT_3AM)
-  // async finishAllChats() {
-  //   await this.prisma.chat.updateMany({
-  //     where: { step: ChatStatus.open },
-  //     data: { closedAt: new Date(), status: ChatStatus.unfinished }
-  //   });
-  // }
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async finishAllChats() {
+    await this.prisma.chat.updateMany({
+      where: {
+        currentStep: {
+          not: "attendant"
+        }
+      },
+      data: {
+        closedAt: new Date(),
+        status: ChatStatus.unfinished
+      }
+    });
+  }
 
   async finishChat(id: string): Promise<void> {
     const updatedTicket = await this.prisma.chat.update({
