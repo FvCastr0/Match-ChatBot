@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { Pause, Play } from "lucide-react";
 import { useRef, useState } from "react";
 
@@ -8,6 +9,9 @@ type MessageBubbleProps = {
   createdAt: string;
   isSender: boolean;
 };
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000;
 
 export default function MessageBubble({
   text,
@@ -25,7 +29,6 @@ export default function MessageBubble({
   const [duration, setDuration] = useState(0);
 
   const [retryCount, setRetryCount] = useState(0);
-  const MAX_RETRIES = 3;
 
   const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/media/${mediaUrl}`;
 
@@ -52,20 +55,37 @@ export default function MessageBubble({
   const progress = duration ? (current / duration) * 100 : 0;
 
   const handleMediaError = (
-    e: React.SyntheticEvent<HTMLAudioElement | HTMLVideoElement, Event>
+    e: React.SyntheticEvent<
+      HTMLImageElement | HTMLVideoElement | HTMLAudioElement
+    >
   ) => {
-    const target = e.currentTarget;
+    const el = e.currentTarget;
 
-    if (retryCount < MAX_RETRIES) {
-      setTimeout(() => {
-        setRetryCount(prev => prev + 1);
-        target.load();
-      }, 2000);
-    } else {
-      console.error(
-        "Limite de tentativas de carregamento atingido. Verifique a conexão ou o arquivo no servidor."
-      );
+    const retries = Number(el.dataset.retries ?? 0);
+
+    if (retries >= MAX_RETRIES) {
+      console.error("Falha ao carregar mídia:", el.src);
+      el.dataset.failed = "true";
+      return;
     }
+
+    el.dataset.retries = String(retries + 1);
+
+    setTimeout(() => {
+      if (el instanceof HTMLImageElement) {
+        const url = new URL(el.src);
+        url.searchParams.set("retry", Date.now().toString());
+        el.src = url.toString();
+      }
+
+      if (el instanceof HTMLVideoElement) {
+        el.load();
+      }
+
+      if (el instanceof HTMLAudioElement) {
+        el.load();
+      }
+    }, RETRY_DELAY);
   };
 
   return (
@@ -81,6 +101,7 @@ export default function MessageBubble({
           <div className="mb-2 relative w-60 h-60 aspect-square">
             <img
               src={url}
+              onError={handleMediaError}
               loading="lazy"
               crossOrigin="anonymous"
               alt="Imagem enviada"
