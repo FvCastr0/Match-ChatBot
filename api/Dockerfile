@@ -5,6 +5,7 @@ WORKDIR /app
 
 
 COPY package*.json ./
+RUN mkdir -p /app/uploads && chmod -R 777 /app/uploads
 RUN npm install --no-optional --no-fund
 
 COPY . .
