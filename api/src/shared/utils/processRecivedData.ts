@@ -15,6 +15,10 @@ export function ProcessRecivedData(data: any): MessageData | null {
   const changes = data.entry?.[0]?.changes?.[0];
   const value = changes?.value;
 
+  if (!value?.messages?.length) {
+    return null;
+  }
+
   if (value?.messages) {
     const message = value.messages[0];
 
@@ -78,13 +82,11 @@ export function ProcessRecivedData(data: any): MessageData | null {
       return { msg: "", type: "TEXT" };
     };
 
-    function hasName() {
-      if (value.contacts === undefined) {
-        return "";
-      } else {
-        if (value.contacts[0].profile.name === "") return "";
-        else return value.contacts[0].profile.name;
-      }
+    function hasName(): string {
+      const name = value?.contacts?.[0]?.profile?.name;
+
+      if (typeof name !== "string") return "";
+      return name.trim();
     }
 
     const parsedMessage = messageData();
