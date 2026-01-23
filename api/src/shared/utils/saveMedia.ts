@@ -1,7 +1,5 @@
 import fs from "fs";
 import path from "path";
-import { Readable } from "stream";
-import { pipeline } from "stream/promises";
 
 export const getExtension = (mimeType: string | null): string => {
   if (!mimeType) return ".bin";
@@ -62,9 +60,8 @@ export async function saveMedia(
 
     const finalPath = path.join(outputDir, `${fileNameBase}${extension}`);
 
-    const nodeStream = Readable.fromWeb(response.body as any);
-
-    await pipeline(nodeStream, fs.createWriteStream(finalPath));
+    const buffer = Buffer.from(await response.arrayBuffer());
+    await fs.promises.writeFile(finalPath, buffer);
 
     return finalPath;
   } catch (error) {
