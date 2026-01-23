@@ -6,6 +6,8 @@ services:
       - "3000:3000"
     env_file:
       - ./api/.env
+    volumes:
+      - uploads_data:/app/uploads
     depends_on:
       - redis
       - postgres
@@ -50,3 +52,4 @@ services:
 volumes:
   polls_pg_data:
   polls_redis_data:
+  uploads_data:
