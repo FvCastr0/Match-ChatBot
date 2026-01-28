@@ -58,6 +58,16 @@ export class StartedHandler implements StepHandler {
       );
       return;
     }
+    await sendInteractiveButtons(
+      dataMsg.phone,
+      `Perfeito! 😎
+       Agora, preciso que você selecione abaixo um dos motivos de contato`,
+      [
+        { id: "pedido", title: "Quero fazer um pedido" },
+        { id: "feedback", title: "Quero dar um feedback" },
+        { id: "problema", title: "Estou tendo problemas" }
+      ]
+    );
 
     await this.messageService.createMessage(
       chat.id,
@@ -65,15 +75,6 @@ export class StartedHandler implements StepHandler {
       "BOT",
       "TEXT",
       ""
-    );
-    await sendInteractiveButtons(
-      dataMsg.phone,
-      "Perfeito! 😎 /n Agora, preciso que você selecione abaixo um dos motivos de contato",
-      [
-        { id: "pedido", title: "Quero fazer um pedido" },
-        { id: "feedback", title: "Quero dar um feedback" },
-        { id: "problema", title: "Estou tendo problemas" }
-      ]
     );
 
     await this.chatService.updateStep(chat.id, "contact_reason");

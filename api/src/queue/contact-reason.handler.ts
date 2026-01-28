@@ -105,17 +105,20 @@ export class ContactReasonHandler implements StepHandler {
       if (business.name === "match_pizza") {
         await sendTextMessage(
           dataMsg.phone,
-          "*Boa escolha!* 🍕 /n  Acesse nosso site para montar seu pedido: https://matchpizza.app.br"
+          `*Boa escolha!* 🍕
+           Acesse nosso site para montar seu pedido: https://matchpizza.app.br`
         );
       } else if (business.name === "smatch_burger") {
         await sendTextMessage(
           dataMsg.phone,
-          "*Boa escolha!* 🍔 /n  Acesse nosso site para montar seu pedido: https://smatchburger.com.br"
+          `*Boa escolha!* 🍔
+           Acesse nosso site para montar seu pedido: https://smatchburger.com.br`
         );
       } else if (business.name === "fihass") {
         await sendTextMessage(
           dataMsg.phone,
-          "*Boa escolha!* 🐪 /n  Acesse nosso site para montar seu pedido: https://fihass.com.br"
+          `*Boa escolha!* 🐪
+           Acesse nosso site para montar seu pedido: https://fihass.com.br`
         );
       } else {
         await sendTextMessage(dataMsg.phone, "Problema ao encontrar empresa.");

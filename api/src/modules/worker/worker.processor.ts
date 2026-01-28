@@ -51,11 +51,12 @@ export class WorkerProcessor extends WorkerHost {
         );
         sendInteractiveButtons(
           dataMsg.phone,
-          "Seja bem vindo a rede Match!\n\nPara te redirecionarmos melhor, com qual empresa você deseja entrar em contato?",
+          `Seja bem vindo a rede Match! 🚀🔥
+           Para te redirecionarmos melhor, com qual empresa você deseja entrar em contato?`,
           [
-            { id: "match_pizza", title: "Match Pizza" },
-            { id: "smatch_burger", title: "Smatch Burger" },
-            { id: "fihass", title: "Fihass" }
+            { id: "Match Pizza", title: "Match Pizza" },
+            { id: "Smatch Burger", title: "Smatch Burger" },
+            { id: "Fihass", title: "Fihass" }
           ]
         );
         await this.messageService.createMessage(
