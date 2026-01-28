@@ -23,7 +23,7 @@ export async function sendTextMessage(phone: string, message: string) {
     to: phone,
     type: "text",
     text: {
-      preview_url: false,
+      preview_url: true,
       body: message
     }
   };

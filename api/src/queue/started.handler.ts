@@ -7,7 +7,7 @@ import { MessageService } from "src/modules/message/message.service";
 import { StepHandler } from "src/repositories/queue.repository";
 import { detectCategory } from "src/shared/utils/detectCategory";
 import { MessageData } from "src/shared/utils/processRecivedData";
-import { sendMessageWithTemplate } from "src/shared/utils/sendMessageWithTemplate";
+import { sendInteractiveButtons } from "src/shared/utils/sendInteractiveButtons";
 import { sendTextMessage } from "src/shared/utils/sendTextMessage";
 
 @Injectable()
@@ -66,7 +66,15 @@ export class StartedHandler implements StepHandler {
       "TEXT",
       ""
     );
-    await sendMessageWithTemplate(dataMsg.phone, "contact");
+    await sendInteractiveButtons(
+      dataMsg.phone,
+      "Perfeito! 😎 /n Agora, preciso que você selecione abaixo um dos motivos de contato",
+      [
+        { id: "pedido", title: "Quero fazer um pedido" },
+        { id: "feedback", title: "Quero dar um feedback" },
+        { id: "problema", title: "Estou tendo problemas" }
+      ]
+    );
 
     await this.chatService.updateStep(chat.id, "contact_reason");
     await this.chatService.updateBusiness(chat.id, business.name);

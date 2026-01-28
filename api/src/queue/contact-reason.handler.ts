@@ -7,7 +7,6 @@ import { MessageService } from "src/modules/message/message.service";
 import { StepHandler } from "src/repositories/queue.repository";
 import { detectCategory } from "src/shared/utils/detectCategory";
 import { MessageData } from "src/shared/utils/processRecivedData";
-import { sendMessageWithTemplate } from "src/shared/utils/sendMessageWithTemplate";
 import { sendTextMessage } from "src/shared/utils/sendTextMessage";
 
 @Injectable()
@@ -104,11 +103,20 @@ export class ContactReasonHandler implements StepHandler {
       }
 
       if (business.name === "match_pizza") {
-        await sendMessageWithTemplate(dataMsg.phone, "place_order_pizza");
+        await sendTextMessage(
+          dataMsg.phone,
+          "*Boa escolha!* 🍕 /n  Acesse nosso site para montar seu pedido: https://matchpizza.app.br"
+        );
       } else if (business.name === "smatch_burger") {
-        await sendMessageWithTemplate(dataMsg.phone, "place_order_burger");
+        await sendTextMessage(
+          dataMsg.phone,
+          "*Boa escolha!* 🍔 /n  Acesse nosso site para montar seu pedido: https://smatchburger.com.br"
+        );
       } else if (business.name === "fihass") {
-        await sendMessageWithTemplate(dataMsg.phone, "place_order_fihass");
+        await sendTextMessage(
+          dataMsg.phone,
+          "*Boa escolha!* 🐪 /n  Acesse nosso site para montar seu pedido: https://fihass.com.br"
+        );
       } else {
         await sendTextMessage(dataMsg.phone, "Problema ao encontrar empresa.");
         await this.messageService.createMessage(

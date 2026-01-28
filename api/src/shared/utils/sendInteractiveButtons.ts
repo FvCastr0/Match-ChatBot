@@ -8,16 +8,34 @@ const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 
 const API_URL = `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`;
 
-export async function sendMessageWithTemplate(phone: string, template: string) {
+interface ButtonOption {
+  id: string;
+  title: string;
+}
+
+export async function sendInteractiveButtons(
+  phone: string,
+  bodyText: string,
+  buttons: ButtonOption[]
+) {
   const payload = {
     messaging_product: "whatsapp",
     recipient_type: "individual",
     to: phone,
-    type: "template",
-    template: {
-      name: template,
-      language: {
-        code: "pt_BR"
+    type: "interactive",
+    interactive: {
+      type: "button",
+      body: {
+        text: bodyText
+      },
+      action: {
+        buttons: buttons.map(btn => ({
+          type: "reply",
+          reply: {
+            id: btn.id,
+            title: btn.title
+          }
+        }))
       }
     }
   };
@@ -36,21 +54,21 @@ export async function sendMessageWithTemplate(phone: string, template: string) {
     const errorData = axiosError.response?.data;
 
     if (errorData?.error.code === 190) {
-      await sendEmailInvalidToken(errorData.error, "gfefezinho@gmail.com");
-      await sendEmailInvalidToken(errorData.error, "edu.castro200@gmail.com");
-      await sendEmailInvalidToken(
-        errorData.error,
-        "contato.smatchburger@gmail.com"
-      );
-      await sendEmailInvalidToken(
-        errorData.error,
-        "contato.matchpizza@gmail.com"
-      );
-      await sendEmailInvalidToken(errorData.error, "contato.fihass@gmail.com");
+      const emails = [
+        "gfefezinho@gmail.com",
+        "edu.castro200@gmail.com",
+        "contato.smatchburger@gmail.com",
+        "contato.matchpizza@gmail.com",
+        "contato.fihass@gmail.com"
+      ];
+
+      for (const email of emails) {
+        await sendEmailInvalidToken(errorData.error, email);
+      }
     }
 
     console.error(
-      "Erro ao enviar mensagem:",
+      "Erro ao enviar mensagem interativa:",
       axiosError.response ? axiosError.response.data : axiosError.message
     );
   }
