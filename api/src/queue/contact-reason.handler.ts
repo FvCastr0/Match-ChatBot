@@ -118,9 +118,9 @@ Acesse nosso site e avalie *sua experiência*: https://redematch.com.br/feedback
         `Entendido!
 Agora, selecione com qual empresa você está tendo problemas`,
         [
-          { id: "Match Pizza", title: "Match Pizza" },
-          { id: "Smatch burger", title: "Smatch Burger" },
-          { id: "Fihass", title: "Fihass" }
+          { id: "Match Pizza", title: "🍕 Match Pizza" },
+          { id: "Smatch burger", title: "🍔 Smatch Burger" },
+          { id: "Fihass", title: "🐪 Fihass" }
         ]
       );
       await this.messageService.createMessage(
