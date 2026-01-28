@@ -1,12 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { Chat, ContactReason } from "@prisma/client";
-import { BusinessService } from "src/modules/business/business.service";
-import { ChatGateway } from "src/modules/chat/chat.gateway";
 import { ChatService } from "src/modules/chat/chat.service";
 import { MessageService } from "src/modules/message/message.service";
 import { StepHandler } from "src/repositories/queue.repository";
 import { detectCategory } from "src/shared/utils/detectCategory";
 import { MessageData } from "src/shared/utils/processRecivedData";
+import { sendInteractiveButtons } from "src/shared/utils/sendInteractiveButtons";
 import { sendTextMessage } from "src/shared/utils/sendTextMessage";
 
 @Injectable()
@@ -60,9 +59,7 @@ export class ContactReasonHandler implements StepHandler {
 
   constructor(
     private readonly chatService: ChatService,
-    private readonly businessService: BusinessService,
-    private readonly messageService: MessageService,
-    private readonly chatGateway: ChatGateway
+    private readonly messageService: MessageService
   ) {}
 
   async handle(chat: Chat | null, dataMsg: MessageData): Promise<void> {
@@ -83,53 +80,11 @@ export class ContactReasonHandler implements StepHandler {
     const category = detectCategory(dataMsg.msg, this.intentKeywords);
 
     if (category === "order") {
-      if (typeof chat.businessId !== "string") return;
-      const business = await this.businessService.findById(chat.businessId);
-
-      if (business === null) {
-        await sendTextMessage(
-          dataMsg.phone,
-          "Você deve digitar uma empresa que é referente a este número"
-        );
-
-        await this.messageService.createMessage(
-          chat.id,
-          "Opção não selecionada",
-          "BOT",
-          "TEXT",
-          ""
-        );
-        return;
-      }
-
-      if (business.name === "match_pizza") {
-        await sendTextMessage(
-          dataMsg.phone,
-          `*Boa escolha!* 🍕
-           Acesse nosso site para montar seu pedido: https://matchpizza.app.br`
-        );
-      } else if (business.name === "smatch_burger") {
-        await sendTextMessage(
-          dataMsg.phone,
-          `*Boa escolha!* 🍔
-           Acesse nosso site para montar seu pedido: https://smatchburger.com.br`
-        );
-      } else if (business.name === "fihass") {
-        await sendTextMessage(
-          dataMsg.phone,
-          `*Boa escolha!* 🐪
-           Acesse nosso site para montar seu pedido: https://fihass.com.br`
-        );
-      } else {
-        await sendTextMessage(dataMsg.phone, "Problema ao encontrar empresa.");
-        await this.messageService.createMessage(
-          chat.id,
-          "PROBLEMA INTERNO!!!",
-          "BOT",
-          "TEXT",
-          ""
-        );
-      }
+      await sendTextMessage(
+        dataMsg.phone,
+        `*Boa escolha!* 🍕🍔🐪
+Acesse nosso site para montar seu pedido: https://redematch.com.br`
+      );
 
       await this.chatService.finishChat(chat.id);
       await this.chatService.updateContactReason(chat.id, ContactReason.order);
@@ -139,7 +94,8 @@ export class ContactReasonHandler implements StepHandler {
     if (category === "feedback") {
       await sendTextMessage(
         dataMsg.phone,
-        "Perfeito! Envie seu feedback por aqui mesmo!"
+        `*Perfeito!*
+Acesse nosso site e avalie *sua experiência*: https://redematch.com.br/feedback`
       );
       await this.messageService.createMessage(
         chat.id,
@@ -157,10 +113,15 @@ export class ContactReasonHandler implements StepHandler {
     }
 
     if (category === "problem") {
-      await sendTextMessage(
+      await sendInteractiveButtons(
         dataMsg.phone,
-        `Entendemos sua frustração e vamos buscar resolver da melhor forma 🚀
-Explique de forma *breve* o que está acontecendo para haver um melhor redirecionamento.`
+        `Entendido!
+Agora, selecione com qual empresa você está tendo problemas`,
+        [
+          { id: "Match Pizza", title: "Match Pizza" },
+          { id: "Smatch burger", title: "Smatch Burger" },
+          { id: "Fihass", title: "Fihass" }
+        ]
       );
       await this.messageService.createMessage(
         chat.id,
@@ -170,11 +131,7 @@ Explique de forma *breve* o que está acontecendo para haver um melhor redirecio
         ""
       );
       await this.chatService.updateContactReason(chat.id, "problem");
-      await this.chatService.updateStep(chat.id, "attendant");
-
-      const chatPayload = await this.chatService.getChatPayload(chat.id);
-
-      this.chatGateway.emitNewTicket(chatPayload);
+      await this.chatService.updateStep(chat.id, "business_redirect");
       return;
     }
 

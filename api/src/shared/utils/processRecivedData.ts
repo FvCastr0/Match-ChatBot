@@ -42,6 +42,13 @@ export function ProcessRecivedData(data: any): MessageData | null {
         };
       }
 
+      if (message.type === "interactive") {
+        return {
+          msg: message.interactive.button_reply.id,
+          type: "TEXT" as MessageType
+        };
+      }
+
       if (message.type === "button") {
         return {
           msg: message.button.text,

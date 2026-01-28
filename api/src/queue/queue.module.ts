@@ -5,8 +5,8 @@ import { CustomerModule } from "src/modules/customer/customer.module";
 import { MessageModule } from "src/modules/message/message.module";
 import { WorkerProcessor } from "src/modules/worker/worker.processor";
 import { AttendantHandler } from "./attendant.handler";
+import { BusinessRedirectHandler } from "./business-redirect.handler";
 import { ContactReasonHandler } from "./contact-reason.handler";
-import { StartedHandler } from "./started.handler";
 import { StepHandlerFactory } from "./step-handler-factory";
 
 @Module({
@@ -14,7 +14,7 @@ import { StepHandlerFactory } from "./step-handler-factory";
   providers: [
     WorkerProcessor,
     StepHandlerFactory,
-    StartedHandler,
+    BusinessRedirectHandler,
     ContactReasonHandler,
     AttendantHandler
   ],

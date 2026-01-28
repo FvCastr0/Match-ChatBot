@@ -6,7 +6,7 @@
 }
 
 body {
-  font-family: "Poppins", system-ui, -apple-system, BlinkMacSystemFont,
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
   background-color: #0b0b0b;
   color: #ffffff;
@@ -84,7 +84,23 @@ body {
   flex-wrap: wrap;
 }
 
-.images img {
+.images div {
+  display: flex;
+  flex-direction: column;
+  margin: 0 3rem;
+}
+
+.images div button {
+  border-radius: .5rem;
+  border: 1px solid white;
+  background-color: transparent;
+  color: whitesmoke;
+  font-size: 1.1rem;
+  padding: .3rem .5rem;
+  cursor: pointer;
+}
+
+.images div img {
   width: 150px;
   height: 150px;
   border-radius: 18px;

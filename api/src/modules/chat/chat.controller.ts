@@ -18,17 +18,6 @@ export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
   @UseGuards(JwtAuthGuard)
-  @Get("")
-  async findAllChats(@Res() res: Response) {
-    try {
-      const chat = await this.chatService.findAll();
-      return res.status(200).send(chat);
-    } catch (e) {
-      return res.status(500).send({ msgs: "Erro no servidor." });
-    }
-  }
-
-  @UseGuards(JwtAuthGuard)
   @Get("problems")
   async findChats(@Res() res: Response) {
     try {

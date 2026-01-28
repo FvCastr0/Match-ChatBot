@@ -27,6 +27,15 @@ services:
     env_file:
       - ./service-app/.env
     restart: unless-stopped
+
+  web:
+    container_name: match-chatbot-web
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    ports:
+      - "3002:80"
+    restart: unless-stopped
   postgres:
     image: bitnami/postgresql:latest
     environment:

@@ -43,7 +43,6 @@ import { sendMessage } from "@/services/sendMessage";
 import { ArrowLeft, Info, Send } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
@@ -263,9 +262,6 @@ export default function Home() {
               onChatCreated={setSelectedChatId}
               token={session?.user.accessToken ? session.user.accessToken : ""}
             />
-            <Button className="text-sm bg-red-500 hover:bg-red-700">
-              <Link href={"/dashboard"}>Dashboard</Link>
-            </Button>
             <p className="text-md space-y-4 text-gray-700 font-medium ">
               {tickets.length} tickets abertos
             </p>
@@ -273,7 +269,7 @@ export default function Home() {
           {tickets.map(ticket => (
             <div key={ticket.id} onClick={() => setSelectedChatId(ticket.id)}>
               <ChatCard
-                business={ticket.business.name}
+                business={ticket.business?.name}
                 customerName={ticket.customer.name}
                 customerPhone={ticket.customer.phone}
                 contactReason={getLastMessagePreview({
