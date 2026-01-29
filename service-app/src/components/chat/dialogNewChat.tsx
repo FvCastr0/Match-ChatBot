@@ -79,12 +79,9 @@ export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
     try {
       setIsLoading(true);
       const businessIdentifier = data.business;
-      const phoneWithoutThridNumber =
-        data.phone.slice(0, 2) + data.phone.slice(3);
-      const phone = `55${data.phone.length === 11 ? phoneWithoutThridNumber : data.phone}`;
       const response = await startChat(
         token,
-        phone,
+        data.phone,
         data.contactReason,
         data.message,
         businessIdentifier,

@@ -50,8 +50,6 @@ import { io, Socket } from "socket.io-client";
 import { ITicket } from "../interface/ITicket";
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-type MessageType = "TEXT" | "IMAGE" | "AUDIO" | "VIDEO";
-
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
