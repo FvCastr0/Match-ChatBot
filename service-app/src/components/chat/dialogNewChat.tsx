@@ -66,24 +66,26 @@ export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
     business: null as Business | null,
     name: "",
     phone: "",
-    message: "",
+    order: "",
     contactReason: ""
   });
 
   const handleStartChat = async () => {
-    if (!data.business || !data.phone || !data.message || !data.contactReason) {
+    if (!data.business || !data.phone || !data.order || !data.contactReason) {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
 
     try {
+      const phone = `55${data.phone}`;
+
       setIsLoading(true);
       const businessIdentifier = data.business;
       const response = await startChat(
         token,
-        data.phone,
+        phone,
         data.contactReason,
-        data.message,
+        data.order,
         businessIdentifier,
         data.name
       );
@@ -93,7 +95,7 @@ export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
           business: null,
           name: "",
           phone: "",
-          message: "",
+          order: "",
           contactReason: ""
         });
 
@@ -108,7 +110,7 @@ export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
           business: null,
           name: "",
           phone: "",
-          message: "",
+          order: "",
           contactReason: ""
         });
         toast.error("Você já tem um chat aberto com esse usuário");
@@ -193,6 +195,7 @@ export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
                   placeholder="Nome do cliente"
                   value={data.name}
                   onChange={e => setData({ ...data, name: e.target.value })}
+                  required
                 />
 
                 <Input
@@ -208,9 +211,9 @@ export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
                 />
 
                 <Input
-                  placeholder="Mensagem inicial"
-                  value={data.message}
-                  onChange={e => setData({ ...data, message: e.target.value })}
+                  placeholder="Número do pedido"
+                  value={data.order}
+                  onChange={e => setData({ ...data, order: e.target.value })}
                 />
 
                 <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>

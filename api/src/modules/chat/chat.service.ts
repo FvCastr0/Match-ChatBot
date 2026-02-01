@@ -4,7 +4,7 @@ import { Chat, ChatStatus, ContactReason, Steps } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { ChatRepository } from "src/repositories/chat.repository";
 import { PrismaService } from "src/shared/lib/prisma/prisma.service";
-import { sendTextMessage } from "src/shared/utils/sendTextMessage";
+import { sendTemplateMessage } from "src/shared/utils/sendTemplateMessage";
 import { BusinessService } from "../business/business.service";
 import { CustomerService } from "../customer/customer.service";
 import { ChatGateway } from "./chat.gateway";
@@ -159,9 +159,9 @@ export class ChatService extends ChatRepository {
   async attendantStartChat(
     customerPhone: string,
     contactReason: ContactReason,
-    message: string,
     businessName: string,
-    customerName?: string
+    customerName: string,
+    order: string
   ): Promise<string | null> {
     const chatId = randomUUID();
     const newChat = async (customerId: string) => {
@@ -192,7 +192,7 @@ export class ChatService extends ChatRepository {
           status: ChatStatus.open,
           messages: {
             create: {
-              content: message,
+              content: "Mensagem inicial",
               sender: "AGENT"
             }
           },
@@ -209,14 +209,17 @@ export class ChatService extends ChatRepository {
         const customerId = randomUUID();
         await this.customerService.createCustomer(
           customerId,
-          customerName ? customerName : "Nome não informado",
+          customerName,
           customerPhone
         );
 
         await newChat(customerId);
       } else await newChat(findCustomer);
       const chatPayload = await this.getChatPayload(chatId);
-      sendTextMessage(customerPhone, message);
+      await sendTemplateMessage(customerPhone, "delivery", [
+        customerName,
+        order
+      ]);
 
       this.chatGateway.emitNewTicket(chatPayload);
       return chatId;

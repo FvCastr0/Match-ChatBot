@@ -7,7 +7,7 @@ export const startChat = async (
   token: string,
   customerPhone: string,
   contactReason: string,
-  message: string,
+  order: string,
   businessName: string,
   customerName: string
 ): Promise<Response> => {
@@ -23,7 +23,7 @@ export const startChat = async (
         body: JSON.stringify({
           customerPhone,
           contactReason,
-          message,
+          order,
           businessName,
           customerName
         })

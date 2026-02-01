@@ -20,7 +20,7 @@ export abstract class ChatRepository {
   abstract attendantStartChat(
     customerPhone: string,
     customerName: string,
-    message: string,
+    order: string,
     contactReason: ContactReason,
     businessName: string
   ): Promise<string | null>;

@@ -37,7 +37,7 @@ export class ChatController {
         data.contactReason,
         data.message,
         data.businessName,
-        data.customerName ? data.customerName : "Nome não informado"
+        data.customerName
       );
       return res.status(201).send({ id: chat });
     } catch (e) {

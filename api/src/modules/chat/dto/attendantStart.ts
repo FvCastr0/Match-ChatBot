@@ -7,7 +7,7 @@ export class AttendantStartDto {
   customerPhone: string;
 
   @IsString()
-  customerName?: string;
+  customerName: string;
 
   @IsString()
   @IsNotEmpty()
@@ -20,4 +20,8 @@ export class AttendantStartDto {
   @IsString()
   @IsNotEmpty()
   businessName: string;
+
+  @IsNotEmpty()
+  @IsString()
+  order: string;
 }
