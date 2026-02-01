@@ -6,7 +6,7 @@ interface Response {
 }
 
 export const findAllChats = async (token: string): Promise<Response> => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/chat`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/chat/all`, {
     headers: {
       Authorization: `Bearer ${token}`
     }

@@ -210,7 +210,7 @@ export default function Home() {
 
     findCustomerChats(session.user.accessToken, selectedChat.customer.id)
       .then(res => setCustomerData(res.data))
-      .catch(() => {});
+      .catch(() => { });
   }, [selectedChat, session?.user.accessToken]);
 
   useEffect(() => {
@@ -250,9 +250,8 @@ export default function Home() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 h-screen">
       <ScrollArea
-        className={`border-r-2 h-full bg-slate-50 ${
-          selectedChatId ? "hidden" : "block"
-        } md:block md:col-span-3 overflow-y-auto`}
+        className={`border-r-2 h-full bg-slate-50 ${selectedChatId ? "hidden" : "block"
+          } md:block md:col-span-3 overflow-y-auto`}
       >
         <div className="p-4 space-y-1">
           <div className="flex items-center justify-between mb-6 flex-wrap gap-1">
@@ -260,6 +259,7 @@ export default function Home() {
               onChatCreated={setSelectedChatId}
               token={session?.user.accessToken ? session.user.accessToken : ""}
             />
+            <Button onClick={() => router.push("/dashboard")} className="w-full md:w-auto cursor-pointer bg-red-500 hover:bg-red-600">Dashboard</Button>
             <p className="text-md space-y-4 text-gray-700 font-medium ">
               {tickets.length} tickets abertos
             </p>
@@ -278,7 +278,7 @@ export default function Home() {
                 isSelected={selectedChatId === ticket.id}
                 isLastMsgFromCustomer={
                   ticket.messages?.[ticket.messages.length - 1]?.sender ===
-                  "CUSTOMER"
+                    "CUSTOMER"
                     ? true
                     : false
                 }
@@ -289,9 +289,8 @@ export default function Home() {
       </ScrollArea>
 
       <div
-        className={`h-full flex flex-col bg-slate-100 ${
-          selectedChatId ? "block" : "hidden"
-        } md:block md:col-span-9`}
+        className={`h-full flex flex-col bg-slate-100 ${selectedChatId ? "block" : "hidden"
+          } md:block md:col-span-9`}
       >
         {selectedChat ? (
           <>
