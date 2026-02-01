@@ -164,6 +164,9 @@ export class ChatService extends ChatRepository {
     order: string
   ): Promise<string | null> {
     const chatId = randomUUID();
+
+    console.log(customerName, customerPhone, order, businessName);
+
     const newChat = async (customerId: string) => {
       const business = await this.businessService.findByName(businessName);
 

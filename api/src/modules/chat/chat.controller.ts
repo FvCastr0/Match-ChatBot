@@ -31,16 +31,20 @@ export class ChatController {
   @UseGuards(JwtAuthGuard)
   @Post("attendant/start")
   async attendantStart(@Body() data: AttendantStartDto, @Res() res: Response) {
+    console.log("data");
     try {
+      console.log("data");
+
       const chat = await this.chatService.attendantStartChat(
         data.customerPhone,
         data.contactReason,
-        data.message,
+        data.order,
         data.businessName,
         data.customerName
       );
       return res.status(201).send({ id: chat });
     } catch (e) {
+      console.log(e);
       return res.status(500).send({ msg: "Erro no servidor." });
     }
   }

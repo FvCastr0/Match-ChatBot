@@ -32,6 +32,8 @@ export const startChat = async (
 
     const ticket = await response.json();
 
+    console.log(ticket);
+
     if (!response.ok) {
       console.error("Erro na resposta do servidor:", response);
       return { ok: false, id: "" };
