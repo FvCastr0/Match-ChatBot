@@ -165,8 +165,6 @@ export class ChatService extends ChatRepository {
   ): Promise<string | null> {
     const chatId = randomUUID();
 
-    console.log(customerName, customerPhone, order, businessName);
-
     const newChat = async (customerId: string) => {
       const business = await this.businessService.findByName(businessName);
 
@@ -227,6 +225,8 @@ export class ChatService extends ChatRepository {
       this.chatGateway.emitNewTicket(chatPayload);
       return chatId;
     } catch (e) {
+      console.log(e);
+
       throw new UnauthorizedException("Não foi possível iniciar o chat.");
     }
   }

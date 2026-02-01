@@ -31,20 +31,16 @@ export class ChatController {
   @UseGuards(JwtAuthGuard)
   @Post("attendant/start")
   async attendantStart(@Body() data: AttendantStartDto, @Res() res: Response) {
-    console.log("data");
     try {
-      console.log("data");
-
       const chat = await this.chatService.attendantStartChat(
         data.customerPhone,
         data.contactReason,
-        data.order,
         data.businessName,
-        data.customerName
+        data.customerName,
+        data.order
       );
       return res.status(201).send({ id: chat });
     } catch (e) {
-      console.log(e);
       return res.status(500).send({ msg: "Erro no servidor." });
     }
   }
@@ -57,6 +53,8 @@ export class ChatController {
 
       return res.status(200).send({ msg: "Chat finalizado com sucesso." });
     } catch (e) {
+      console.log(e);
+
       return res.status(500).send({ msg: "Erro no servidor." });
     }
   }
