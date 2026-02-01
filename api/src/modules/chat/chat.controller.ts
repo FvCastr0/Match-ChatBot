@@ -53,8 +53,6 @@ export class ChatController {
 
       return res.status(200).send({ msg: "Chat finalizado com sucesso." });
     } catch (e) {
-      console.log(e);
-
       return res.status(500).send({ msg: "Erro no servidor." });
     }
   }

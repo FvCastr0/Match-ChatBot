@@ -217,7 +217,7 @@ export class ChatService extends ChatRepository {
         await newChat(customerId);
       } else await newChat(findCustomer);
       const chatPayload = await this.getChatPayload(chatId);
-      await sendTemplateMessage(customerPhone, "delivery", [
+      await sendTemplateMessage(customerPhone, "contact_order", [
         customerName,
         order
       ]);
@@ -225,8 +225,6 @@ export class ChatService extends ChatRepository {
       this.chatGateway.emitNewTicket(chatPayload);
       return chatId;
     } catch (e) {
-      console.log(e);
-
       throw new UnauthorizedException("Não foi possível iniciar o chat.");
     }
   }
