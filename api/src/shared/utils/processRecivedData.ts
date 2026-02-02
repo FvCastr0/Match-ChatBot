@@ -9,6 +9,8 @@ export interface MessageData {
   name: string;
   type: MessageType;
   mediaUrl?: string;
+  downloadUrl?: string;
+  mediaId?: string;
 }
 
 export function ProcessRecivedData(data: any): MessageData | null {
@@ -22,18 +24,12 @@ export function ProcessRecivedData(data: any): MessageData | null {
   if (value?.messages) {
     const message = value.messages[0];
 
-    const triggerSaveMedia = (url: string, id: string) => {
-      if (process.env.ACCESS_TOKEN) {
-        saveMedia(url, process.env.ACCESS_TOKEN, id).catch(err => {
-          console.error(`Erro ao salvar mídia em background (ID: ${id}):`, err);
-        });
-      }
-    };
-
     const messageData = (): {
       msg: string;
       type: MessageType;
       mediaUrl?: string;
+      downloadUrl?: string;
+      mediaId?: string;
     } => {
       if (message.type === "text") {
         return {
@@ -57,32 +53,32 @@ export function ProcessRecivedData(data: any): MessageData | null {
       }
 
       if (message.type === "image") {
-        triggerSaveMedia(message.image.url, message.image.id);
-
         return {
           msg: message.image.caption ?? "",
           type: message.type.toUpperCase() as MessageType,
-          mediaUrl: message.image.id + getExtension(message.image.mime_type)
+          mediaUrl: message.image.id + getExtension(message.image.mime_type),
+          downloadUrl: message.image.url,
+          mediaId: message.image.id
         };
       }
 
       if (message.type === "video") {
-        triggerSaveMedia(message.video.url, message.video.id);
-
         return {
           msg: message.video.caption ?? "",
           type: "VIDEO",
-          mediaUrl: message.video.id + getExtension(message.video.mime_type)
+          mediaUrl: message.video.id + getExtension(message.video.mime_type),
+          downloadUrl: message.video.url,
+          mediaId: message.video.id
         };
       }
 
       if (message.type === "audio") {
-        triggerSaveMedia(message.audio.url, message.audio.id);
-
         return {
           msg: "",
           type: "AUDIO",
-          mediaUrl: message.audio.id + getExtension(message.audio.mime_type)
+          mediaUrl: message.audio.id + getExtension(message.audio.mime_type),
+          downloadUrl: message.audio.url,
+          mediaId: message.audio.id
         };
       }
 
@@ -105,7 +101,9 @@ export function ProcessRecivedData(data: any): MessageData | null {
       name: hasName(),
       timeLastMsg: Number(message.timestamp),
       type: parsedMessage.type,
-      mediaUrl: parsedMessage.mediaUrl
+      mediaUrl: parsedMessage.mediaUrl,
+      downloadUrl: parsedMessage.downloadUrl,
+      mediaId: parsedMessage.mediaId
     };
   }
   return null;

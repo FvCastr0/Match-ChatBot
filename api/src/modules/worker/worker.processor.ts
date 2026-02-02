@@ -3,6 +3,7 @@ import { Job } from "bullmq";
 import { StepHandlerFactory } from "src/queue/step-handler-factory";
 import { MessageData } from "src/shared/utils/processRecivedData";
 import { sendInteractiveButtons } from "src/shared/utils/sendInteractiveButtons";
+import { saveMedia } from "src/shared/utils/saveMedia";
 import { ChatService } from "../chat/chat.service";
 import { CustomerService } from "../customer/customer.service";
 import { MessageService } from "../message/message.service";
@@ -24,6 +25,14 @@ export class WorkerProcessor extends WorkerHost {
     if (job.name !== "new-message") return;
 
     try {
+      if (dataMsg.downloadUrl && dataMsg.mediaId && process.env.ACCESS_TOKEN) {
+        await saveMedia(
+          dataMsg.downloadUrl,
+          process.env.ACCESS_TOKEN,
+          dataMsg.mediaId
+        );
+      }
+
       const customer = await this.customerService.findCustomer(
         dataMsg.customerId
       );
@@ -46,10 +55,10 @@ export class WorkerProcessor extends WorkerHost {
           chat.id,
           dataMsg.msg,
           "CUSTOMER",
-          "TEXT",
-          ""
+          dataMsg.type,
+          dataMsg.mediaUrl ?? ""
         );
-        sendInteractiveButtons(
+        await sendInteractiveButtons(
           dataMsg.phone,
           `Seja bem vindo a rede Match! 🚀🔥
 Para te redirecionarmos melhor, qual é o motivo do contato?`,
