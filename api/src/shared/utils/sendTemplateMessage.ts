@@ -19,12 +19,9 @@ export interface WhatsappErrorResponse {
 export async function sendTemplateMessage(
   phone: string,
   templateName: string,
-  variables: string[] = []
+  name: string,
+  order: string
 ) {
-  const parameters = variables.map(variable => ({
-    type: "text",
-    text: variable
-  }));
 
   const payload = {
     messaging_product: "whatsapp",
@@ -39,7 +36,16 @@ export async function sendTemplateMessage(
       components: [
         {
           type: "body",
-          parameters: parameters
+          parameters: [
+            {
+              type: "text",
+              text: name
+            },
+            {
+              type: "text",
+              text: order
+            }
+          ]
         }
       ]
     }

@@ -217,10 +217,7 @@ export class ChatService extends ChatRepository {
         await newChat(customerId);
       } else await newChat(findCustomer);
       const chatPayload = await this.getChatPayload(chatId);
-      await sendTemplateMessage(customerPhone, "contact_order", [
-        customerName,
-        order
-      ]);
+      await sendTemplateMessage(customerPhone, "contact_order", customerName, order);
 
       this.chatGateway.emitNewTicket(chatPayload);
       return chatId;
