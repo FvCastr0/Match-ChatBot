@@ -9,7 +9,7 @@ export const startChat = async (
   contactReason: string,
   order: string,
   businessName: string,
-  customerName: string
+  name: string
 ): Promise<Response> => {
   try {
     const response = await fetch(
@@ -25,7 +25,7 @@ export const startChat = async (
           contactReason,
           order,
           businessName,
-          customerName
+          name
         })
       }
     );

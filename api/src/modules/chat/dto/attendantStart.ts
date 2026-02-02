@@ -7,6 +7,7 @@ export class AttendantStartDto {
   customerPhone: string;
 
   @IsString()
+  @IsNotEmpty()
   customerName: string;
 
   @IsEnum(ContactReason)
