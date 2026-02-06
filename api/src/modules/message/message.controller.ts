@@ -9,13 +9,18 @@ import {
 } from "@nestjs/common";
 import type { Response } from "express";
 import { JwtAuthGuard } from "src/auth/jwt.guard";
+import { sendMediaMessage } from "src/shared/utils/sendMediaMessage";
 import { sendTextMessage } from "src/shared/utils/sendTextMessage";
 import { MessageService } from "../message/message.service";
 import { attendantMessageDto } from "./dto/attendantMessage.dto";
+import { AttendantMediaMessageDto } from "./dto/attendantMediaMessage.dto";
+import { join } from "path";
+import { existsSync } from "fs";
+import { NotFoundException } from "@nestjs/common";
 
 @Controller("message")
 export class MessageController {
-  constructor(private readonly messageService: MessageService) {}
+  constructor(private readonly messageService: MessageService) { }
 
   @UseGuards(JwtAuthGuard)
   @Get("groupedDate")
@@ -45,6 +50,34 @@ export class MessageController {
       return newMessage;
     } catch (e) {
       throw new UnauthorizedException("Não foi possivel enviar a mensagem.");
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post("attendant/media")
+  async attendantMediaMessage(@Body() data: AttendantMediaMessageDto) {
+    try {
+      const basePath = join(process.cwd(), "uploads");
+      const filePath = join(basePath, data.filename);
+
+      if (!existsSync(filePath)) {
+        throw new NotFoundException("Arquivo não encontrado.");
+      }
+
+      const newMessage = await this.messageService.createMessage(
+        data.chatId,
+        data.caption || "",
+        "AGENT",
+        "IMAGE",
+        data.filename
+      );
+
+      await sendMediaMessage(data.phone, filePath);
+
+      return newMessage;
+    } catch (e) {
+      console.error(e);
+      throw new UnauthorizedException("Não foi possivel enviar a mensagem de mídia.");
     }
   }
 }

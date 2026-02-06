@@ -40,7 +40,9 @@ import {
   notifyNewMessage
 } from "@/services/notify";
 import { sendMessage } from "@/services/sendMessage";
-import { ArrowLeft, Info, Send } from "lucide-react";
+import { uploadMedia } from "@/services/uploadMedia";
+import { sendMediaMessage } from "@/services/sendMediaMessage";
+import { ArrowLeft, Info, Send, Paperclip } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -216,6 +218,54 @@ export default function Home() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [selectedChat?.messages.length]);
+
+  /* New state and refs for file upload */
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadAndSendFile = async (file: File) => {
+    if (!file || !selectedChat || !session?.user.accessToken) return;
+
+    // Optional: Show loading state
+
+    const uploadRes = await uploadMedia(file, session.user.accessToken);
+
+    if (uploadRes.ok && uploadRes.filename) {
+      await sendMediaMessage(
+        selectedChat.id,
+        selectedChat.customer.phone,
+        uploadRes.filename,
+        session.user.accessToken,
+        messageInput // Optional: use current text as caption
+      );
+      setMessageInput(""); // Clear input if used as caption
+    } else {
+      toast.error("Erro ao enviar imagem.");
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await uploadAndSendFile(file);
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image") !== -1) {
+        const blob = items[i].getAsFile();
+        if (blob) {
+          await uploadAndSendFile(blob);
+        }
+      }
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !selectedChat || !session?.user.accessToken)
@@ -473,12 +523,28 @@ export default function Home() {
 
             <div className="p-4 bg-white border-t h-[69px] ">
               <div className="flex items-center gap-2 w-full">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*,video/*,audio/*,application/pdf"
+                  onChange={handleFileUpload}
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Paperclip color="#1C398E" />
+                </Button>
                 <Input
                   placeholder="Digite uma mensagem"
                   onSubmit={handleSendMessage}
                   value={messageInput}
                   onChange={e => setMessageInput(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && handleSendMessage()}
+                  onPaste={handlePaste}
                 />
                 <Button
                   size="icon"

@@ -1,5 +1,5 @@
 import { ContactReason } from "@prisma/client";
-import { IsEnum, IsNotEmpty, IsString } from "class-validator";
+import { IsEnum, IsNotEmpty, IsString, IsOptional } from "class-validator";
 
 export class AttendantStartDto {
   @IsString()
@@ -7,8 +7,12 @@ export class AttendantStartDto {
   customerPhone: string;
 
   @IsString()
-  @IsNotEmpty()
-  customerName: string;
+  @IsOptional()
+  customerName?: string;
+
+  @IsString()
+  @IsOptional()
+  name?: string;
 
   @IsEnum(ContactReason)
   @IsNotEmpty()

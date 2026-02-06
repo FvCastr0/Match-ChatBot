@@ -12,10 +12,11 @@ import type { Response } from "express";
 import { JwtAuthGuard } from "src/auth/jwt.guard";
 import { ChatService } from "./chat.service";
 import { AttendantStartDto } from "./dto/attendantStart";
+import { log } from "console";
 
 @Controller("chat")
 export class ChatController {
-  constructor(private readonly chatService: ChatService) {}
+  constructor(private readonly chatService: ChatService) { }
 
   @UseGuards(JwtAuthGuard)
   @Get("problems")
@@ -42,12 +43,14 @@ export class ChatController {
   @UseGuards(JwtAuthGuard)
   @Post("attendant/start")
   async attendantStart(@Body() data: AttendantStartDto, @Res() res: Response) {
+    const resolvedName = data.customerName || data.name || "Cliente";
+
     try {
       const chat = await this.chatService.attendantStartChat(
         data.customerPhone,
         data.contactReason,
         data.businessName,
-        data.customerName,
+        resolvedName,
         data.order
       );
       return res.status(201).send({ id: chat });

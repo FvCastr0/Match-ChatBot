@@ -168,6 +168,10 @@ export class ChatService extends ChatRepository {
     const newChat = async (customerId: string) => {
       const business = await this.businessService.findByName(businessName);
 
+      if (!customerId) {
+        throw new UnauthorizedException("ID do cliente inválido.");
+      }
+
       const findChat = await this.prisma.chat.findFirst({
         where: { customerId, status: ChatStatus.open }
       });
@@ -217,7 +221,7 @@ export class ChatService extends ChatRepository {
         await newChat(customerId);
       } else await newChat(findCustomer);
       const chatPayload = await this.getChatPayload(chatId);
-      await sendTemplateMessage(customerPhone, "contact_order", customerName, order);
+      await sendTemplateMessage(customerPhone, "service_contact", customerName, order);
 
       this.chatGateway.emitNewTicket(chatPayload);
       return chatId;
