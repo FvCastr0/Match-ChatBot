@@ -39,10 +39,10 @@ import {
   isTabActive,
   notifyNewMessage
 } from "@/services/notify";
+import { sendMediaMessage } from "@/services/sendMediaMessage";
 import { sendMessage } from "@/services/sendMessage";
 import { uploadMedia } from "@/services/uploadMedia";
-import { sendMediaMessage } from "@/services/sendMediaMessage";
-import { ArrowLeft, Info, Send, Paperclip } from "lucide-react";
+import { ArrowLeft, Info, Paperclip, Send } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -309,7 +309,12 @@ export default function Home() {
               onChatCreated={setSelectedChatId}
               token={session?.user.accessToken ? session.user.accessToken : ""}
             />
-            <Button onClick={() => router.push("/dashboard")} className="w-full md:w-auto cursor-pointer bg-red-500 hover:bg-red-600">Dashboard</Button>
+            <Button
+              onClick={() => router.push("/dashboard")}
+              className="w-full md:w-auto cursor-pointer bg-red-500 hover:bg-red-600"
+            >
+              Dashboard
+            </Button>
             <p className="text-md space-y-4 text-gray-700 font-medium ">
               {tickets.length} tickets abertos
             </p>
@@ -318,7 +323,7 @@ export default function Home() {
             <div key={ticket.id} onClick={() => setSelectedChatId(ticket.id)}>
               <ChatCard
                 business={ticket.business?.name}
-                customerName={ticket.customer.name}
+                customerName={ticket.customer.name || "Não informado"}
                 customerPhone={ticket.customer.phone}
                 contactReason={getLastMessagePreview({
                   content:
@@ -355,7 +360,7 @@ export default function Home() {
                   <ArrowLeft size={20} />
                 </Button>
 
-                {logoMap[selectedChat.business.name] && (
+                {selectedChat.business?.name && logoMap[selectedChat.business.name] && (
                   <Image
                     src={logoMap[selectedChat.business.name]}
                     alt="Logo"
@@ -416,7 +421,7 @@ export default function Home() {
                                 .map(chat => (
                                   <TableRow key={chat.id}>
                                     <TableCell className="font-medium">
-                                      {chat.business.name}
+                                      {chat.business?.name || "Empresa não identificada"}
                                     </TableCell>
 
                                     <TableCell>
@@ -439,7 +444,7 @@ export default function Home() {
                                         <AlertDialogContent>
                                           <AlertDialogHeader>
                                             <AlertDialogTitle>
-                                              Empresa {chat.business.name}
+                                              Empresa {chat.business?.name || "N/A"}
                                             </AlertDialogTitle>
                                           </AlertDialogHeader>
 
@@ -563,6 +568,6 @@ export default function Home() {
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 }

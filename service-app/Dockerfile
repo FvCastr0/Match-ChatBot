@@ -19,25 +19,27 @@ WORKDIR /app
 
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
+ENV PORT 3001
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-RUN mkdir -p /app/.next/cache \
-  && chown -R nextjs:nodejs /app/.next
+# 1. Criamos o usuário e grupo primeiro
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/.next ./ .next
+# 2. Criamos a pasta de cache ANTES de copiar os arquivos e já com o dono certo
+# Isso evita o chown recursivo pesado depois
+RUN mkdir -p /app/.next/cache && chown nextjs:nodejs /app/.next/cache
 
-RUN mkdir -p /app/.next/cache \
-  && chown -R nextjs:nodejs /app
+# 3. Copiamos os arquivos já definindo o usuário (Crucial para velocidade)
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+
+# Removi o comando "COPY --from=builder /app/.next ./ .next" pois o standalone
+# já lida com o que é necessário e você já copiou o static acima.
 
 USER nextjs
 
 EXPOSE 3001
-
-ENV PORT 3001
 
 CMD ["node", "server.js"]
