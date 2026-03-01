@@ -30,7 +30,7 @@ export function ProcessRecivedData(data: any): MessageData | null {
       mediaUrl?: string;
       downloadUrl?: string;
       mediaId?: string;
-    } => {
+    } | null => {
       if (message.type === "text") {
         return {
           msg: message.text.body,
@@ -82,7 +82,7 @@ export function ProcessRecivedData(data: any): MessageData | null {
         };
       }
 
-      return { msg: "", type: "TEXT" };
+      return null;
     };
 
     function hasName(): string {
@@ -93,6 +93,8 @@ export function ProcessRecivedData(data: any): MessageData | null {
     }
 
     const parsedMessage = messageData();
+
+    if (!parsedMessage) return null;
 
     return {
       customerId: message.from,
