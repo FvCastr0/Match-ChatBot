@@ -13,17 +13,17 @@ export interface MessageData {
   mediaId?: string;
 }
 
-export function ProcessRecivedData(data: any): MessageData | null {
+export function ProcessRecivedData(data: any): MessageData[] {
   const changes = data.entry?.[0]?.changes?.[0];
   const value = changes?.value;
 
   if (!value?.messages?.length) {
-    return null;
+    return [];
   }
 
-  if (value?.messages) {
-    const message = value.messages[0];
+  const parsedMessages: MessageData[] = [];
 
+  for (const message of value.messages) {
     const messageData = (): {
       msg: string;
       type: MessageType;
@@ -94,19 +94,20 @@ export function ProcessRecivedData(data: any): MessageData | null {
 
     const parsedMessage = messageData();
 
-    if (!parsedMessage) return null;
-
-    return {
-      customerId: message.from,
-      phone: message.from,
-      msg: parsedMessage.msg,
-      name: hasName(),
-      timeLastMsg: Number(message.timestamp),
-      type: parsedMessage.type,
-      mediaUrl: parsedMessage.mediaUrl,
-      downloadUrl: parsedMessage.downloadUrl,
-      mediaId: parsedMessage.mediaId
-    };
+    if (parsedMessage) {
+      parsedMessages.push({
+        customerId: message.from,
+        phone: message.from,
+        msg: parsedMessage.msg,
+        name: hasName(),
+        timeLastMsg: Number(message.timestamp),
+        type: parsedMessage.type,
+        mediaUrl: parsedMessage.mediaUrl,
+        downloadUrl: parsedMessage.downloadUrl,
+        mediaId: parsedMessage.mediaId
+      });
+    }
   }
-  return null;
+
+  return parsedMessages;
 }

@@ -21,4 +21,4 @@ import { WorkerProcessor } from "./worker.processor";
   providers: [WorkerProcessor],
   exports: [WorkerModule]
 })
-export class WorkerModule {}
+export class WorkerModule { }

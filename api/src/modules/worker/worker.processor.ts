@@ -9,7 +9,13 @@ import { CustomerService } from "../customer/customer.service";
 import { MessageService } from "../message/message.service";
 import { executeWithLock } from "src/shared/utils/mutex";
 
-@Processor("message-queue", { concurrency: 30 })
+@Processor("message-queue", {
+  concurrency: 1,
+  limiter: {
+    max: 5,
+    duration: 1000 // por 1 segundo
+  }
+})
 export class WorkerProcessor extends WorkerHost {
   constructor(
     private readonly customerService: CustomerService,

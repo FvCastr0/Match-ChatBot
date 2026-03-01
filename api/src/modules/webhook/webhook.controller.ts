@@ -9,7 +9,7 @@ export class WebhookController {
   private readonly VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
   constructor(
     @InjectQueue("message-queue") private readonly messageQueue: Queue
-  ) {}
+  ) { }
 
   @Get()
   verifyWebhook(
@@ -26,21 +26,31 @@ export class WebhookController {
   }
 
   @Post()
-  async reciveMessage(@Body() body: any, @Res() res: Response) {
-    const dataMsg = ProcessRecivedData(body);
+  reciveMessage(@Body() body: any, @Res() res: Response) {
+    // 1. Responde IMEDIATAMENTE a Meta com 200 OK
+    // Isso evita que a Meta considere falha no envio e faça retentativas duplicadas
+    res.sendStatus(200);
 
-    if (dataMsg === null) return res.sendStatus(200);
+    // 2. Continua o processamento no background de forma assíncrona (Fire and Forget)
+    (async () => {
+      try {
+        const dataMsgs = ProcessRecivedData(body);
 
-    try {
-      await this.messageQueue.add("new-message", dataMsg, {
-        attempts: 3,
-        removeOnComplete: true
-      });
+        if (!dataMsgs || dataMsgs.length === 0) return;
 
-      return res.sendStatus(200);
-    } catch (error) {
-      console.error("Falha ao adicionar job na fila:", error);
-      return res.sendStatus(500);
-    }
+        for (const dataMsg of dataMsgs) {
+          await this.messageQueue.add("new-message", dataMsg, {
+            attempts: 3,
+            removeOnComplete: true,
+            backoff: {
+              type: "exponential",
+              delay: 1000 // if it fails, retry in 1s -> 2s -> 4s instead of waiting a full minute default
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Falha ao adicionar job na fila (background):", error);
+      }
+    })();
   }
 }
