@@ -2,6 +2,7 @@ import { MessageType } from "@prisma/client";
 import { getExtension, saveMedia } from "./saveMedia";
 
 export interface MessageData {
+  messageId: string;
   customerId: string;
   phone: string;
   msg: string;
@@ -96,6 +97,7 @@ export function ProcessRecivedData(data: any): MessageData[] {
 
     if (parsedMessage) {
       parsedMessages.push({
+        messageId: message.id,
         customerId: message.from,
         phone: message.from,
         msg: parsedMessage.msg,

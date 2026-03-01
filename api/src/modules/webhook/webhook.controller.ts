@@ -40,6 +40,7 @@ export class WebhookController {
 
         for (const dataMsg of dataMsgs) {
           await this.messageQueue.add("new-message", dataMsg, {
+            jobId: dataMsg.messageId, // Meta's message ID guarantees uniqueness and prevents retry duplication
             attempts: 3,
             removeOnComplete: true,
             backoff: {
