@@ -7,6 +7,7 @@ import { saveMedia } from "src/shared/utils/saveMedia";
 import { ChatService } from "../chat/chat.service";
 import { CustomerService } from "../customer/customer.service";
 import { MessageService } from "../message/message.service";
+import { executeWithLock } from "src/shared/utils/mutex";
 
 @Processor("message-queue", { concurrency: 30 })
 export class WorkerProcessor extends WorkerHost {
@@ -24,66 +25,68 @@ export class WorkerProcessor extends WorkerHost {
 
     if (job.name !== "new-message") return;
 
-    try {
-      if (dataMsg.downloadUrl && dataMsg.mediaId && process.env.ACCESS_TOKEN) {
-        saveMedia(
-          dataMsg.downloadUrl,
-          process.env.ACCESS_TOKEN,
-          dataMsg.mediaId
-        ).catch(err => console.error("Erro background download media:", err));
-      }
+    await executeWithLock(dataMsg.customerId, async () => {
+      try {
+        if (dataMsg.downloadUrl && dataMsg.mediaId && process.env.ACCESS_TOKEN) {
+          saveMedia(
+            dataMsg.downloadUrl,
+            process.env.ACCESS_TOKEN,
+            dataMsg.mediaId
+          ).catch(err => console.error("Erro background download media:", err));
+        }
 
-      const customer = await this.customerService.findCustomer(
-        dataMsg.customerId
-      );
-
-      if (!customer) {
-        await this.customerService.createCustomer(
-          dataMsg.customerId,
-          dataMsg.name,
-          dataMsg.phone
+        const customer = await this.customerService.findCustomer(
+          dataMsg.customerId
         );
-      }
 
-      const hasActiveChat = await this.chatService.findAndIsActive(
-        dataMsg.customerId
-      );
+        if (!customer) {
+          await this.customerService.createCustomer(
+            dataMsg.customerId,
+            dataMsg.name,
+            dataMsg.phone
+          );
+        }
 
-      if (!hasActiveChat) {
-        const chat = await this.chatService.create(dataMsg.customerId);
-        await this.messageService.createMessage(
-          chat.id,
-          dataMsg.msg,
-          "CUSTOMER",
-          dataMsg.type,
-          dataMsg.mediaUrl ?? ""
+        const hasActiveChat = await this.chatService.findAndIsActive(
+          dataMsg.customerId
         );
-        await sendInteractiveButtons(
-          dataMsg.phone,
-          `Seja bem vindo a rede Match! 🚀🔥
+
+        if (!hasActiveChat) {
+          const chat = await this.chatService.create(dataMsg.customerId);
+          await this.messageService.createMessage(
+            chat.id,
+            dataMsg.msg,
+            "CUSTOMER",
+            dataMsg.type,
+            dataMsg.mediaUrl ?? ""
+          );
+          await sendInteractiveButtons(
+            dataMsg.phone,
+            `Seja bem vindo a rede Match! 🚀🔥
 Para te redirecionarmos melhor, qual é o motivo do contato?`,
-          [
-            { id: "pedido", title: "Realizar um pedido" },
-            { id: "feedback", title: "Quero dar feedback" },
-            { id: "problema", title: "Estou com problemas" }
-          ]
-        );
-        await this.messageService.createMessage(
-          chat.id,
-          "Mensagem redirecionamento empresa",
-          "BOT",
-          "TEXT",
-          ""
-        );
+            [
+              { id: "pedido", title: "Realizar um pedido" },
+              { id: "feedback", title: "Quero dar feedback" },
+              { id: "problema", title: "Estou com problemas" }
+            ]
+          );
+          await this.messageService.createMessage(
+            chat.id,
+            "Mensagem redirecionamento empresa",
+            "BOT",
+            "TEXT",
+            ""
+          );
 
-        return;
+          return;
+        }
+
+        const chatData = await this.chatService.findData(hasActiveChat.id);
+        const handler = this.stepFactory.getHandler(chatData?.currentStep);
+        await handler.handle(chatData, dataMsg);
+      } catch (error) {
+        throw error;
       }
-
-      const chatData = await this.chatService.findData(hasActiveChat.id);
-      const handler = this.stepFactory.getHandler(chatData?.currentStep);
-      await handler.handle(chatData, dataMsg);
-    } catch (error) {
-      throw error;
-    }
+    });
   }
 }
