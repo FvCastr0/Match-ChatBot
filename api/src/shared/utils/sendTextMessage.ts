@@ -23,7 +23,7 @@ export async function sendTextMessage(phone: string, message: string) {
     to: phone,
     type: "text",
     text: {
-      preview_url: true,
+      preview_url: false,
       body: message
     }
   };
@@ -46,8 +46,9 @@ export async function sendTextMessage(phone: string, message: string) {
     }
 
     console.error(
-      "Erro ao enviar mensagem:",
-      axiosError.response ? axiosError.response.data : axiosError.message
+      "[TELEMETRY] Erro APICall sendTextMessage:",
+      JSON.stringify(axiosError.response?.data || axiosError.message, null, 2)
     );
+    throw error; // Propagate error so chat isn't closed if msg sending fails!
   }
 }
