@@ -3,11 +3,6 @@ import FormData from "form-data";
 import fs from "fs";
 import { sendEmailInvalidToken } from "./sendEmail";
 
-const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
-const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
-
-const API_URL = `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}`;
-
 interface WhatsappErrorResponse {
     error: {
         message: string;
@@ -18,6 +13,14 @@ interface WhatsappErrorResponse {
 }
 
 async function uploadMedia(filePath: string): Promise<string> {
+    const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
+    const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+
+    if (!ACCESS_TOKEN || !PHONE_NUMBER_ID) {
+        throw new Error("ACCESS_TOKEN ou PHONE_NUMBER_ID não estão definidos nas variáveis de ambiente.");
+    }
+
+    const API_URL = `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}`;
     const url = `${API_URL}/media`;
     const data = new FormData();
     data.append("messaging_product", "whatsapp");
@@ -44,6 +47,15 @@ async function uploadMedia(filePath: string): Promise<string> {
 }
 
 export async function sendMediaMessage(phone: string, filePath: string) {
+    const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
+    const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
+
+    if (!ACCESS_TOKEN || !PHONE_NUMBER_ID) {
+        throw new Error("ACCESS_TOKEN ou PHONE_NUMBER_ID não estão definidos nas variáveis de ambiente.");
+    }
+
+    const API_URL = `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}`;
+
     try {
         const mediaId = await uploadMedia(filePath);
 

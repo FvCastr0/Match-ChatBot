@@ -8,7 +8,7 @@ import { ChatService } from "../chat/chat.service";
 import { CustomerService } from "../customer/customer.service";
 import { MessageService } from "../message/message.service";
 
-@Processor("message-queue")
+@Processor("message-queue", { concurrency: 30 })
 export class WorkerProcessor extends WorkerHost {
   constructor(
     private readonly customerService: CustomerService,
@@ -26,11 +26,11 @@ export class WorkerProcessor extends WorkerHost {
 
     try {
       if (dataMsg.downloadUrl && dataMsg.mediaId && process.env.ACCESS_TOKEN) {
-        await saveMedia(
+        saveMedia(
           dataMsg.downloadUrl,
           process.env.ACCESS_TOKEN,
           dataMsg.mediaId
-        );
+        ).catch(err => console.error("Erro background download media:", err));
       }
 
       const customer = await this.customerService.findCustomer(

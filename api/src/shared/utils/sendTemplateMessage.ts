@@ -29,7 +29,7 @@ export async function sendTemplateMessage(
     to: phone,
     type: "template",
     template: {
-      name: "contact_order",
+      name: "service_contact",
       language: {
         code: "pt_BR"
       },
