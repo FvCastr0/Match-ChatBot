@@ -3,6 +3,7 @@ import { Body, Controller, Get, Post, Query, Res } from "@nestjs/common";
 import type { Queue } from "bullmq";
 import type { Response } from "express";
 import { ProcessRecivedData } from "src/shared/utils/processRecivedData";
+import { redisClient } from "src/shared/utils/redis";
 
 @Controller("webhook")
 export class WebhookController {
@@ -26,32 +27,34 @@ export class WebhookController {
   }
 
   @Post()
-  reciveMessage(@Body() body: any, @Res() res: Response) {
-    // 1. Responde IMEDIATAMENTE a Meta com 200 OK
-    // Isso evita que a Meta considere falha no envio e faça retentativas duplicadas
-    res.sendStatus(200);
+  async reciveMessage(@Body() body: any, @Res() res: Response) {
+    try {
+      const dataMsgs = ProcessRecivedData(body);
 
-    // 2. Continua o processamento no background de forma assíncrona (Fire and Forget)
-    (async () => {
-      try {
-        const dataMsgs = ProcessRecivedData(body);
-
-        if (!dataMsgs || dataMsgs.length === 0) return;
-
+      if (dataMsgs && dataMsgs.length > 0) {
         for (const dataMsg of dataMsgs) {
-          await this.messageQueue.add("new-message", dataMsg, {
-            jobId: dataMsg.messageId, // Meta's message ID guarantees uniqueness and prevents retry duplication
+          // 1. Salva a mensagem bruta na Inbox do cliente no Redis
+          await redisClient.rpush(`inbox:${dataMsg.customerId}`, JSON.stringify(dataMsg));
+          
+          // 2. Avisa a fila que este cliente tem mensagens para processar
+          // O jobId idêntico ao customerId impede jobs duplicados concorrentes na fila
+          const safeJobId = `proc_${dataMsg.customerId.replace(/:/g, "_")}`;
+          await this.messageQueue.add("process-customer", { customerId: dataMsg.customerId }, {
+            jobId: safeJobId, 
             attempts: 3,
             removeOnComplete: true,
             backoff: {
               type: "exponential",
-              delay: 1000 // if it fails, retry in 1s -> 2s -> 4s instead of waiting a full minute default
+              delay: 1000 
             }
           });
         }
-      } catch (error) {
-        console.error("Falha ao adicionar job na fila (background):", error);
       }
-    })();
+
+      return res.status(200).send("EVENT_RECEIVED");
+    } catch (error) {
+      console.error("Falha ao adicionar job na fila:", error);
+      return res.sendStatus(500);
+    }
   }
 }
