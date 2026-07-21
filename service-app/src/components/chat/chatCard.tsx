@@ -24,10 +24,10 @@ export default function ChatCard({
   return (
     <Card
       className={`
-        bg-white transition-colors
+        bg-white border border-slate-200 transition-colors text-slate-900
         ${
           isSelected
-            ? "border-blue-500 bg-blue-50"
+            ? "border-primary bg-primary/10"
             : "hover:bg-slate-50 cursor-pointer"
         }
       `}
@@ -45,12 +45,12 @@ export default function ChatCard({
                 <></>
               )}
             </CardTitle>
-            <CardDescription className="text-xs md:text-sm mb-1">
-              <strong className="text-slate-500">Última mensgem: </strong>
+            <CardDescription className="text-xs md:text-sm mb-1 text-slate-600">
+              <strong className="text-slate-900 font-medium">Última mensagem: </strong>
               {contactReason}
             </CardDescription>
-            <CardDescription className="text-xs md:text-sm">
-              <strong className="text-slate-500">Telefone:</strong>{" "}
+            <CardDescription className="text-xs md:text-sm text-slate-600">
+              <strong className="text-slate-900 font-medium">Telefone:</strong>{" "}
               {customerPhone}
             </CardDescription>
           </div>

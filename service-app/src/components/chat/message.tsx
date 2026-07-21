@@ -21,7 +21,7 @@ export default function MessageBubble({
   mediaUrl
 }: MessageBubbleProps) {
   const alignment = isSender ? "self-end" : "self-start";
-  const bubbleColor = isSender ? "bg-blue-900" : "bg-slate-700";
+  const bubbleColor = isSender ? "bg-primary text-white" : "bg-white text-slate-800 border border-slate-200";
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -93,7 +93,7 @@ export default function MessageBubble({
       className={`
            ${alignment}
            ${bubbleColor}
-           text-white rounded-lg p-2 max-w-[70%] flex flex-col shadow-md
+           text-white rounded-lg p-2 max-w-[70%] flex flex-col shadow-sm
          `}
     >
       <div>
@@ -132,7 +132,7 @@ export default function MessageBubble({
         )}
 
         {(type === "AUDIO" || type === "VOICE") && (
-          <div className="flex items-center gap-3 rounded-lg px-3 py-2 bg-black/20 w-60">
+          <div className="flex items-center gap-3 rounded-lg px-3 py-2 bg-black/10 w-60">
             <audio
               ref={audioRef}
               src={url}
@@ -179,10 +179,10 @@ export default function MessageBubble({
           </div>
         )}
 
-        {text && <p className="text-sm whitespace-pre-wrap">{text}</p>}
+        {text && <p className={`text-sm whitespace-pre-wrap ${!isSender ? 'text-slate-800' : 'text-white'}`}>{text}</p>}
       </div>
 
-      <span className="text-[10px] text-gray-300 mt-1 self-end opacity-80">
+      <span className={`text-[10px] mt-1 self-end opacity-80 ${isSender ? "text-white/80" : "text-slate-500"}`}>
         {createdAt}
       </span>
     </div>

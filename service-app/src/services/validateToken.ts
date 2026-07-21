@@ -3,8 +3,9 @@ interface Response {
 }
 
 export const validateToken = async (token: string): Promise<Response> => {
+  const baseUrl = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/profile`,
+    `${baseUrl}/auth/profile`,
     {
       headers: {
         Authorization: `Bearer ${token}`

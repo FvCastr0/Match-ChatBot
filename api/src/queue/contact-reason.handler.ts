@@ -60,7 +60,7 @@ export class ContactReasonHandler implements StepHandler {
   constructor(
     private readonly chatService: ChatService,
     private readonly messageService: MessageService
-  ) {}
+  ) { }
 
   async handle(chat: Chat | null, dataMsg: MessageData): Promise<void> {
     if (!chat) {
@@ -83,7 +83,7 @@ export class ContactReasonHandler implements StepHandler {
       await sendTextMessage(
         dataMsg.phone,
         `*Boa escolha!* 🍕🍔🐪
-Acesse nosso site para montar seu pedido: https://redematch.com.br`
+Acesse nosso site para montar seu pedido: http://localhost:5173/`
       );
 
       await this.chatService.finishChat(chat.id);
@@ -95,7 +95,7 @@ Acesse nosso site para montar seu pedido: https://redematch.com.br`
       await sendTextMessage(
         dataMsg.phone,
         `*Perfeito!*
-Acesse nosso site e avalie *sua experiência*: https://redematch.com.br/feedback`
+Acesse nosso site e avalie *sua experiência*: http://localhost:5173/feedback`
       );
       await this.messageService.createMessage(
         chat.id,

@@ -61,6 +61,7 @@ export default function Home() {
   const [customerData, setCustomerData] = useState<CustomerData>();
   const [messageInput, setMessageInput] = useState("");
 
+
   const socketRef = useRef<Socket | null>(null);
   const ticketsRef = useRef<ITicket[]>([]);
   const selectedChatIdRef = useRef<string | null>(null);
@@ -292,15 +293,13 @@ export default function Home() {
     if (content === "" && type === "TEXT") return "Sem mensagens";
     if (type === "IMAGE") return "Imagem";
     if (type === "VIDEO") return "Vídeo";
-    if (type === "AUDIO") return "Áudio";
-
     return content;
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 h-screen">
+    <div className="grid grid-cols-1 md:grid-cols-12 h-screen text-slate-900 bg-white">
       <ScrollArea
-        className={`border-r-2 h-full bg-slate-50 ${selectedChatId ? "hidden" : "block"
+        className={`border-r border-slate-200 h-full bg-slate-50 ${selectedChatId ? "hidden" : "block"
           } md:block md:col-span-3 overflow-y-auto`}
       >
         <div className="p-4 space-y-1">
@@ -311,13 +310,10 @@ export default function Home() {
             />
             <Button
               onClick={() => router.push("/dashboard")}
-              className="w-full md:w-auto cursor-pointer bg-red-500 hover:bg-red-600"
+              className="w-full md:w-auto cursor-pointer bg-primary hover:bg-primary/90 text-white font-semibold"
             >
               Dashboard
             </Button>
-            <p className="text-md space-y-4 text-gray-700 font-medium ">
-              {tickets.length} tickets abertos
-            </p>
           </div>
           {tickets.map(ticket => (
             <div key={ticket.id} onClick={() => setSelectedChatId(ticket.id)}>
@@ -344,12 +340,12 @@ export default function Home() {
       </ScrollArea>
 
       <div
-        className={`h-full flex flex-col bg-slate-100 ${selectedChatId ? "block" : "hidden"
+        className={`h-full flex flex-col bg-slate-50 ${selectedChatId ? "block" : "hidden"
           } md:block md:col-span-9`}
       >
         {selectedChat ? (
           <>
-            <div className="p-4 border-b bg-white flex justify-between items-center overflow-y-auto h-[77px]">
+            <div className="p-4 border-b border-slate-200 bg-white flex justify-between items-center overflow-y-auto h-[77px] text-slate-900">
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
@@ -526,7 +522,7 @@ export default function Home() {
               </div>
             </ScrollArea>
 
-            <div className="p-4 bg-white border-t h-[69px] ">
+            <div className="p-4 bg-white border-t border-slate-200 h-[69px]">
               <div className="flex items-center gap-2 w-full">
                 <input
                   type="file"
@@ -538,32 +534,33 @@ export default function Home() {
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="cursor-pointer"
+                  className="cursor-pointer text-slate-500 hover:text-slate-900 hover:bg-slate-100"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <Paperclip color="#1C398E" />
+                  <Paperclip className="h-5 w-5" />
                 </Button>
                 <Input
-                  placeholder="Digite uma mensagem"
+                  placeholder="Digite uma mensagem..."
                   onSubmit={handleSendMessage}
                   value={messageInput}
                   onChange={e => setMessageInput(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && handleSendMessage()}
                   onPaste={handlePaste}
+                  className="bg-slate-100 border-slate-200 text-slate-900 focus:border-primary/50 focus:ring-primary/50"
                 />
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="cursor-pointer"
+                  className="cursor-pointer text-primary hover:text-primary/90 hover:bg-slate-100"
                   onClick={handleSendMessage}
                 >
-                  <Send color="#1C398E" />
+                  <Send className="h-5 w-5" />
                 </Button>
               </div>
             </div>
           </>
         ) : (
-          <div className="h-full hidden md:flex items-center justify-center">
+          <div className="h-full hidden md:flex items-center justify-center text-slate-500">
             <h3 className="text-lg font-semibold">Selecione uma conversa</h3>
           </div>
         )}

@@ -22,7 +22,11 @@ export class AttendantStartDto {
   @IsNotEmpty()
   businessName: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  order: string;
+  order?: string;
+
+  @IsOptional()
+  @IsString()
+  role?: string;
 }

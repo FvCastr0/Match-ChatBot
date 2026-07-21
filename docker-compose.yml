@@ -1,17 +1,21 @@
 services:
-  api:
+  chatbot:
     build: ./api
     container_name: match-chatbot-api
     ports:
       - "3000:3000"
     env_file:
       - ./api/.env
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://docker:docker@postgres-chatbot:5432/chatbot
     volumes:
       - uploads_data:/app/uploads
     depends_on:
       - redis
-      - postgres
+      - postgres-chatbot
     restart: unless-stopped
+
   frontend:
     mem_limit: 768m
     cpus: 0.3
@@ -26,6 +30,10 @@ services:
       - "3001:3001"
     env_file:
       - ./service-app/.env
+    environment:
+      - INTERNAL_BACKEND_URL=http://chatbot:3000
+    depends_on:
+      - chatbot
     restart: unless-stopped
 
   web:
@@ -36,14 +44,15 @@ services:
     ports:
       - "3002:80"
     restart: unless-stopped
-  postgres:
+
+  postgres-chatbot:
     image: bitnami/postgresql:latest
     environment:
       - POSTGRESQL_USERNAME=docker
       - POSTGRESQL_PASSWORD=docker
-      - POSTGRESQL_DATABASE=polls
+      - POSTGRESQL_DATABASE=chatbot
     ports:
-      - "127.0.0.1:5432:5432" # Bind apenas no localhost por segurança
+      - "127.0.0.1:5434:5432" # Mapeia porta 5432 interna do container para a porta 5434 externa no localhost
     volumes:
       - polls_pg_data:/bitnami/postgresql
     restart: unless-stopped
@@ -51,14 +60,103 @@ services:
   redis:
     image: bitnami/redis:latest
     environment:
-      - REDIS_PASSWORD=8em4UzKx88U99
+      - ALLOW_EMPTY_PASSWORD=yes
     ports:
       - "127.0.0.1:6379:6379" # Bind apenas no localhost por segurança
     volumes:
       - polls_redis_data:/bitnami/redis/data
     restart: unless-stopped
 
+  postgres-motoboys:
+    image: bitnami/postgresql:latest
+    environment:
+      - POSTGRESQL_USERNAME=docker
+      - POSTGRESQL_PASSWORD=docker
+      - POSTGRESQL_DATABASE=motoboys
+    ports:
+      - "127.0.0.1:5433:5432" # Mapeia porta 5432 interna do container para a porta 5433 externa no localhost
+    volumes:
+      - motoboys_pg_data:/bitnami/postgresql
+    restart: unless-stopped
+
+  postgres-evolution:
+    image: postgres:15-alpine
+    container_name: match_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_MULTIPLE_DATABASES: match_motoboys,evolution
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Script customizado para criar multiplas bases ao subir
+      - ./init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh
+    ports:
+      - "5432:5432"
+
+  evolution:
+    image: evoapicloud/evolution-api:latest
+    container_name: match_evolution
+    restart: always
+    volumes:
+      - evolution_instances:/evolution/instances
+    environment:
+      - SERVER_URL=http://localhost:8080
+      - LOG_LEVEL=ERROR,WARN,DEBUG,INFO,LOG,VERBOSE,FATAL
+      - WPP_LID_MODE=false
+      - WEBSOCKET_ENABLED=true
+      - WEBSOCKET_GLOBAL_EVENTS=true
+      - WEBSOCKET_ALLOWED_HOSTS=*
+      - CORS_ORIGIN=*
+      - CORS_METHODS=POST,GET,PUT,DELETE
+      - CORS_CREDENTIALS=true
+      - PORT=8080
+      - AUTHENTICATION_TYPE=apikey
+      - AUTHENTICATION_API_KEY=apitestkey
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://postgres:postgrespassword@postgres-evolution:5432/evolution?schema=public
+      - DATABASE_SAVE_DATA_INSTANCE=true
+      - DATABASE_SAVE_DATA_NEW_MESSAGE=true
+      - DATABASE_SAVE_DATA_WEBHOOK=true
+      - DATABASE_SAVE_DATA_CONTACTS=true
+      - DATABASE_SAVE_DATA_CHATS=true
+      - REDIS_ENABLED=true
+      - REDIS_URI=redis://redis:6379
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://redis:6379/0
+      - CACHE_REDIS_PREFIX_KEY=evolution
+      - CACHE_REDIS_SAVE_INSTANCES=true
+      - CACHE_LOCAL_ENABLED=false
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres-evolution
+      - redis
+
+  motoboys:
+    build: ./motoboys
+    container_name: match-chatbot-motoboys
+    ports:
+      - "3003:3000"
+    env_file:
+      - ./motoboys/.env
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - EVOLUTION_API_URL=http://evolution:8080
+      - DATABASE_URL=postgresql://docker:docker@postgres-motoboys:5432/motoboys
+      - PORT=3000
+    depends_on:
+      - redis
+      - postgres-motoboys
+      - postgres-evolution
+      - evolution
+    restart: unless-stopped
+
 volumes:
   polls_pg_data:
+  postgres_data:
+  motoboys_pg_data:
   polls_redis_data:
   uploads_data:
+  evolution_instances:

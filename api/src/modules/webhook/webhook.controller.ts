@@ -1,13 +1,15 @@
 import { InjectQueue } from "@nestjs/bullmq";
-import { Body, Controller, Get, Post, Query, Res } from "@nestjs/common";
+import { Body, Controller, Get, Post, Query, Res, Headers, Req, ForbiddenException } from "@nestjs/common";
+import { createHmac } from "crypto";
 import type { Queue } from "bullmq";
-import type { Response } from "express";
+import type { Response, Request } from "express";
 import { ProcessRecivedData } from "src/shared/utils/processRecivedData";
 import { redisClient } from "src/shared/utils/redis";
 
 @Controller("webhook")
 export class WebhookController {
   private readonly VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
+  private readonly APP_SECRET = process.env.WHATSAPP_APP_SECRET;
   constructor(
     @InjectQueue("message-queue") private readonly messageQueue: Queue
   ) { }
@@ -27,8 +29,30 @@ export class WebhookController {
   }
 
   @Post()
-  async reciveMessage(@Body() body: any, @Res() res: Response) {
+  async reciveMessage(
+    @Body() body: any,
+    @Headers("x-hub-signature-256") signature: string,
+    @Req() req: any,
+    @Res() res: Response
+  ) {
     try {
+      if (this.APP_SECRET) {
+        if (!signature) {
+          throw new ForbiddenException("Signature missing");
+        }
+        const rawBody = req.rawBody;
+        if (!rawBody) {
+          throw new ForbiddenException("Raw body missing");
+        }
+
+        const expectedSignature = "sha256=" + createHmac("sha256", this.APP_SECRET)
+          .update(rawBody)
+          .digest("hex");
+
+        if (signature !== expectedSignature) {
+          throw new ForbiddenException("Invalid signature");
+        }
+      }
       const dataMsgs = ProcessRecivedData(body);
 
       if (dataMsgs && dataMsgs.length > 0) {

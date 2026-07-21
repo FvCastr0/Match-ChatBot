@@ -128,7 +128,7 @@ export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
       <AlertDialogTrigger asChild>
-        <Button className="cursor-pointer bg-amber-700">Novo Chat</Button>
+        <Button className="cursor-pointer bg-primary hover:bg-primary/90 text-white font-semibold">Novo Chat</Button>
       </AlertDialogTrigger>
 
       <AlertDialogContent>
@@ -139,12 +139,14 @@ export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
 
           <div className="flex justify-between">
             <div className="flex flex-col w-[60px]">
+
+
+
               <button
-                className={`cursor-pointer mb-4 transition-all ${
-                  data.business === Business.Fihass
-                    ? "ring-2 ring-blue-500 rounded-lg"
-                    : ""
-                }`}
+                className={`cursor-pointer mb-4 transition-all ${data.business === Business.Fihass
+                  ? "ring-2 ring-blue-500 rounded-lg"
+                  : ""
+                  }`}
                 onClick={() => setData({ ...data, business: Business.Fihass })}
               >
                 <Image
@@ -157,11 +159,10 @@ export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
               </button>
 
               <button
-                className={`cursor-pointer mb-4 transition-all ${
-                  data.business === Business.Smatch
-                    ? "ring-2 ring-blue-500 rounded-lg"
-                    : ""
-                }`}
+                className={`cursor-pointer mb-4 transition-all ${data.business === Business.Smatch
+                  ? "ring-2 ring-blue-500 rounded-lg"
+                  : ""
+                  }`}
                 onClick={() => setData({ ...data, business: Business.Smatch })}
               >
                 <Image
@@ -173,12 +174,12 @@ export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
                 />
               </button>
 
+
               <button
-                className={`cursor-pointer mb-4 transition-all ${
-                  data.business === Business.Match
-                    ? "ring-2 ring-blue-500 rounded-lg"
-                    : ""
-                }`}
+                className={`cursor-pointer mb-4 transition-all ${data.business === Business.Match
+                  ? "ring-2 ring-blue-500 rounded-lg"
+                  : ""
+                  }`}
                 onClick={() => setData({ ...data, business: Business.Match })}
               >
                 <Image
@@ -228,8 +229,8 @@ export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
                     >
                       {data.contactReason
                         ? mockReasons.find(
-                            reason => reason.value === data.contactReason
-                          )?.label
+                          reason => reason.value === data.contactReason
+                        )?.label
                         : "Selecione o motivo"}
                       <ChevronsUpDown className="opacity-50 h-4 w-4" />
                     </Button>
@@ -271,6 +272,10 @@ export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
                 </Popover>
               </div>
             )}
+
+
+
+
           </div>
         </AlertDialogHeader>
 

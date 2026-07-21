@@ -51,7 +51,7 @@ export class ChatController {
         data.contactReason,
         data.businessName,
         resolvedName,
-        data.order
+        data.order = data.order ?? ""
       );
       return res.status(201).send({ id: chat });
     } catch (e) {

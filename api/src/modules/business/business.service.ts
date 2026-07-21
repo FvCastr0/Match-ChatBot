@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { Business } from "@prisma/client";
+import { Business, Prisma } from "@prisma/client";
 import { BusinessRepository } from "src/repositories/business.repository";
 import { PrismaService } from "src/shared/lib/prisma/prisma.service";
 
@@ -8,8 +8,9 @@ export class BusinessService extends BusinessRepository {
   constructor(private readonly prisma: PrismaService) {
     super();
   }
-  async findByName(name: string): Promise<Business | null> {
-    const business = await this.prisma.business.findFirst({
+  async findByName(name: string, tx?: Prisma.TransactionClient): Promise<Business | null> {
+    const prisma = tx ?? this.prisma;
+    const business = await prisma.business.findFirst({
       where: {
         name
       }

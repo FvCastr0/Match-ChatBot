@@ -53,35 +53,37 @@ export default function Login() {
       className="min-h-screen w-full flex items-start justify-center bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: "url('/imgs/fundo.png')" }}
     >
-      <Card className="w-full max-w-md bg-white-70 backdrop-blur-md mt-20 text-white mx-4">
-        <CardHeader>
-          <CardTitle>Faça login em sua conta</CardTitle>
-          <CardDescription>
+      <Card className="w-full max-w-md bg-black/60 border border-white/10 backdrop-blur-md mt-20 text-white mx-4 shadow-2xl">
+        <CardHeader className="space-y-1.5">
+          <CardTitle className="text-2xl font-black text-center tracking-tight">FAÇA LOGIN EM SUA CONTA</CardTitle>
+          <CardDescription className="text-slate-300 text-center">
             Coloque seu usuário e senha para fazer login
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin}>
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-5">
               <div className="grid gap-2">
-                <Label htmlFor="user">Usuário</Label>
+                <Label htmlFor="user" className="text-slate-200 font-semibold">Usuário</Label>
                 <Input
                   id="user"
                   type="user"
                   onChange={e => setUser(e.target.value)}
                   value={user}
+                  className="bg-white/5 border-white/10 text-white focus:border-primary/50 focus:ring-primary/50"
                   required
                 />
               </div>
               <div className="grid gap-2">
                 <div className="flex items-center">
-                  <Label htmlFor="password">Senha</Label>
+                  <Label htmlFor="password" className="text-slate-200 font-semibold">Senha</Label>
                 </div>
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
+                  className="bg-white/5 border-white/10 text-white focus:border-primary/50 focus:ring-primary/50"
                   required
                 />
               </div>
@@ -89,7 +91,7 @@ export default function Login() {
 
             <Button
               type="submit"
-              className="w-full cursor-pointer bg-red-500 mt-6 hover:bg-red-700"
+              className="w-full cursor-pointer bg-primary hover:bg-primary/90 text-white mt-6 font-bold uppercase tracking-wider transition-all duration-200"
               disabled={isLoading}
             >
               {isLoading ? (

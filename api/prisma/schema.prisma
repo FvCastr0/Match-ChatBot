@@ -20,9 +20,10 @@ model User {
 }
 
 model Customer {
-  id    String  @id
+  id    String      @id
   name  String?
   phone String
+  role  ContactRole @default(CUSTOMER)
   chats Chat[]
 }
 
@@ -43,16 +44,14 @@ model Chat {
 }
 
 model Message {
-  id        String     @id @default(cuid())
+  id        String      @id @default(cuid())
   chatId    String
   sender    SenderType
-  createdAt DateTime   @default(now())
-  chat      Chat       @relation(fields: [chatId], references: [id], onDelete: Cascade)
   content   String?
-
-  mediaUrl String?
-
-  type MessageType @default(TEXT)
+  createdAt DateTime    @default(now())
+  mediaUrl  String?
+  type      MessageType @default(TEXT)
+  chat      Chat        @relation(fields: [chatId], references: [id], onDelete: Cascade)
 }
 
 enum SenderType {
@@ -94,4 +93,8 @@ enum MessageType {
   IMAGE
   VIDEO
   AUDIO
+}
+
+enum ContactRole {
+  CUSTOMER
 }

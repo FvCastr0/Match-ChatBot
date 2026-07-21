@@ -8,6 +8,9 @@ import { ChatService } from "../chat/chat.service";
 import { CustomerService } from "../customer/customer.service";
 import { MessageService } from "../message/message.service";
 import { redisClient } from "src/shared/utils/redis";
+import { sendTextMessage } from "src/shared/utils/sendTextMessage";
+import { Steps } from "@prisma/client";
+import { ChatGateway } from "../chat/chat.gateway";
 
 @Processor("message-queue", {
   concurrency: 50,
@@ -21,28 +24,34 @@ export class WorkerProcessor extends WorkerHost {
     private readonly customerService: CustomerService,
     private readonly chatService: ChatService,
     private readonly messageService: MessageService,
-    private readonly stepFactory: StepHandlerFactory
+    private readonly stepFactory: StepHandlerFactory,
+    private readonly chatGateway: ChatGateway
   ) {
     super();
   }
 
   override async process(job: Job<{ customerId: string }>) {
     if (job.name !== "process-customer") return;
-    
+
     const { customerId } = job.data;
     const inboxKey = `inbox:${customerId}`;
 
     // Loop para garantir que mensagens que cheguem enquanto estamos processando sejam lidas
     while (true) {
-      // 1. Pega todas as mensagens na Inbox deste cliente
-      const messagesJson = await redisClient.lrange(inboxKey, 0, -1);
+      // 1 e 2. Pega e remove todas as mensagens na Inbox deste cliente de forma atômica via script Lua
+      const luaScript = `
+        local messages = redis.call('lrange', KEYS[1], 0, -1)
+        if #messages > 0 then
+          redis.call('ltrim', KEYS[1], #messages, -1)
+        end
+        return messages
+      `;
       
+      const messagesJson: string[] = await redisClient.eval(luaScript, 1, inboxKey) as string[];
+
       if (!messagesJson || messagesJson.length === 0) {
         break; // Nenhuma mensagem nova, sai do loop e finaliza o job
       }
-
-      // 2. Remove da inbox as mensagens que acabamos de ler
-      await redisClient.ltrim(inboxKey, messagesJson.length, -1);
 
       // 3. Desserializa e ordena pelo timestamp do WhatsApp
       let messages: MessageData[] = messagesJson.map((m) => JSON.parse(m));
@@ -55,9 +64,8 @@ export class WorkerProcessor extends WorkerHost {
         // Idempotência baseada no messageId da Meta usando Redis (expira em 7 dias)
         const idempotencyKey = `processed_msg:${dataMsg.messageId}`;
         const alreadyProcessed = await redisClient.set(idempotencyKey, "1", "EX", 604800, "NX");
-        
+
         if (!alreadyProcessed) {
-          console.log(`Mensagem duplicada ignorada: ${dataMsg.messageId}`);
           continue; // Pula se já processado
         }
 
@@ -70,14 +78,15 @@ export class WorkerProcessor extends WorkerHost {
             ).catch((err) => console.error("Erro background download media:", err));
           }
 
-          const customer = await this.customerService.findCustomer(dataMsg.customerId);
+          let customerData = await this.customerService.findCustomerData(dataMsg.customerId);
 
-          if (!customer) {
+          if (!customerData) {
             await this.customerService.createCustomer(
               dataMsg.customerId,
               dataMsg.name,
               dataMsg.phone
             );
+            customerData = await this.customerService.findCustomerData(dataMsg.customerId);
           }
 
           const hasActiveChat = await this.chatService.findAndIsActive(dataMsg.customerId);
@@ -91,6 +100,7 @@ export class WorkerProcessor extends WorkerHost {
               dataMsg.type,
               dataMsg.mediaUrl ?? ""
             );
+
             await sendInteractiveButtons(
               dataMsg.phone,
               `Seja bem vindo a rede Match! 🚀🔥\nPara te redirecionarmos melhor, qual é o motivo do contato?`,
@@ -111,20 +121,31 @@ export class WorkerProcessor extends WorkerHost {
             continue;
           }
 
-          const chatData = await this.chatService.findData(hasActiveChat.id);
-          const handler = this.stepFactory.getHandler(chatData?.currentStep);
-          await handler.handle(chatData, dataMsg);
+          if (customerData?.role === "CUSTOMER") {
+            const chatData = await this.chatService.findData(hasActiveChat.id);
+            const handler = this.stepFactory.getHandler(chatData?.currentStep);
+            await handler.handle(chatData, dataMsg);
+          } else {
+            const chatData = await this.chatService.findData(hasActiveChat.id);
+            if (chatData?.currentStep !== Steps.attendant) {
+              await this.chatService.updateStep(hasActiveChat.id, Steps.attendant);
+            }
+            const handler = this.stepFactory.getHandler(Steps.attendant);
+            await handler.handle(chatData, dataMsg);
+          }
+
         } catch (error) {
           console.error("Erro ao processar mensagem sequencial:", error);
           await redisClient.del(idempotencyKey); // Permite reprocessamento se der crash
-          
-          // Devolve esta mensagem e todas as subsequentes para a Inbox
+
+          // Devolve esta mensagem e todas as subsequentes para o INÍCIO da Inbox, preservando a ordem
           const remainingMessages = messages.slice(i);
           const remainingJson = remainingMessages.map(m => JSON.stringify(m));
           if (remainingJson.length > 0) {
-            await redisClient.rpush(inboxKey, ...remainingJson);
+            remainingJson.reverse();
+            await redisClient.lpush(inboxKey, ...remainingJson);
           }
-          
+
           throw error; // Repassa erro para a fila tentar novamente com backoff
         }
       }

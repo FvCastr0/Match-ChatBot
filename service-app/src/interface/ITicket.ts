@@ -15,7 +15,7 @@ export interface ITicket {
   currentStep: string;
   startedBy: string;
   status: string;
-  customer: { id: string; name: string; phone: string };
+  customer: { id: string; name: string; phone: string; role?: string };
   messages: {
     id: string;
     sender: sender;

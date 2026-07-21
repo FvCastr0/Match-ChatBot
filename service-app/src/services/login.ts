@@ -8,8 +8,9 @@ export const login = async (
   name: string,
   password: string
 ): Promise<Response> => {
+  const baseUrl = process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
+    `${baseUrl}/auth/login`,
     {
       method: "POST",
       headers: {

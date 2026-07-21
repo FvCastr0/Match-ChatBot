@@ -10,7 +10,7 @@ export class StepHandlerFactory {
     private readonly businessRedirectHandler: BusinessRedirectHandler,
     private readonly contactReasonHandler: ContactReasonHandler,
     private readonly attendantHandler: AttendantHandler
-  ) {}
+  ) { }
 
   getHandler(step: string | null | undefined): StepHandler {
     switch (step) {

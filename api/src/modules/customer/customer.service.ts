@@ -43,6 +43,7 @@ export class CustomerService extends CustomerRepository {
             messages: true,
             business: true,
             contactReason: true,
+            customer: { select: { role: true } },
             createdAt: true
           }
         }
@@ -50,12 +51,13 @@ export class CustomerService extends CustomerRepository {
     });
   }
 
-  async createCustomer(id: string, name: string, phone: string) {
+  async createCustomer(id: string, name: string, phone: string, role?: any) {
     await this.prisma.customer.create({
       data: {
         id,
         phone,
-        name
+        name,
+        role: role ?? "CUSTOMER"
       }
     });
   }

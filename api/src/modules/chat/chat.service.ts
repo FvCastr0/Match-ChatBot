@@ -1,6 +1,6 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException, HttpException, UnauthorizedException } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { Chat, ChatStatus, ContactReason, Steps } from "@prisma/client";
+import { Chat, ChatStatus, ContactReason, Steps, Prisma } from "@prisma/client";
 import { randomUUID } from "crypto";
 import { ChatRepository } from "src/repositories/chat.repository";
 import { PrismaService } from "src/shared/lib/prisma/prisma.service";
@@ -8,6 +8,7 @@ import { sendTemplateMessage } from "src/shared/utils/sendTemplateMessage";
 import { BusinessService } from "../business/business.service";
 import { CustomerService } from "../customer/customer.service";
 import { ChatGateway } from "./chat.gateway";
+import { sendTextMessage } from "src/shared/utils/sendTextMessage";
 
 @Injectable()
 export class ChatService extends ChatRepository {
@@ -165,31 +166,35 @@ export class ChatService extends ChatRepository {
   ): Promise<string | null> {
     const chatId = randomUUID();
 
-    const newChat = async (customerId: string) => {
-      const business = await this.businessService.findByName(businessName);
+    const businessVerification = async (tx: Prisma.TransactionClient) => {
+      const business = await this.businessService.findByName(businessName, tx);
+      if (!business)
+        throw new NotFoundException("Negócio informado não existe.");
+      return business.id;
+    };
 
+    const newChat = async (customerId: string, tx: Prisma.TransactionClient) => {
       if (!customerId) {
-        throw new UnauthorizedException("ID do cliente inválido.");
+        throw new BadRequestException("ID do cliente inválido.");
       }
 
-      const findChat = await this.prisma.chat.findFirst({
+      const findChat = await tx.chat.findFirst({
         where: { customerId, status: ChatStatus.open }
       });
 
       if (findChat)
-        throw new UnauthorizedException(
+        throw new BadRequestException(
           "Você já tem um chat aberto com esse usuário."
         );
 
-      if (!business)
-        throw new UnauthorizedException("Negócio informado não existe.");
-      await this.prisma.chat.create({
+      const business = await businessVerification(tx);
+      await tx.chat.create({
         data: {
           customer: {
             connect: { id: customerId }
           },
           business: {
-            connect: { id: business.id }
+            connect: { id: business }
           },
           id: chatId,
           contactReason,
@@ -207,26 +212,39 @@ export class ChatService extends ChatRepository {
     };
 
     try {
-      const findCustomer =
-        await this.customerService.findCustomerByPhone(customerPhone);
+      await this.prisma.$transaction(async (tx) => {
+        const findCustomer = await tx.customer.findFirst({
+          where: { phone: customerPhone }
+        });
 
-      if (!findCustomer) {
-        const customerId = randomUUID();
-        await this.customerService.createCustomer(
-          customerId,
-          customerName,
-          customerPhone
-        );
+        if (!findCustomer) {
+          const customerId = randomUUID();
+          await tx.customer.create({
+            data: {
+              id: customerId,
+              name: customerName,
+              phone: customerPhone,
+              role: "CUSTOMER"
+            }
+          });
 
-        await newChat(customerId);
-      } else await newChat(findCustomer);
+          await newChat(customerId, tx);
+        } else {
+          await newChat(findCustomer.id, tx);
+        }
+      });
+
       const chatPayload = await this.getChatPayload(chatId);
-      await sendTemplateMessage(customerPhone, "service_contact", customerName, order);
+
+      await sendTextMessage(customerPhone, "cliente");
 
       this.chatGateway.emitNewTicket(chatPayload);
       return chatId;
     } catch (e) {
-      throw new UnauthorizedException("Não foi possível iniciar o chat.");
+      if (e instanceof HttpException) {
+        throw e;
+      }
+      throw new InternalServerErrorException("Não foi possível iniciar o chat.");
     }
   }
 }

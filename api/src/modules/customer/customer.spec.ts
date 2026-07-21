@@ -70,7 +70,8 @@ describe("Customer Service", () => {
     const customerData = {
       phone: "5554774854129",
       name: "Test",
-      id: randomUUID()
+      id: randomUUID(),
+      role: "CUSTOMER"
     };
 
     it("should create a customer", async () => {
