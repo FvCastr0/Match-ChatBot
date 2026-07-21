@@ -55,6 +55,9 @@ export class ChatController {
       );
       return res.status(201).send({ id: chat });
     } catch (e) {
+      if (e instanceof HttpException) {
+        return res.status(e.getStatus()).send({ msg: e.message });
+      }
       return res.status(500).send({ msg: "Erro no servidor." });
     }
   }

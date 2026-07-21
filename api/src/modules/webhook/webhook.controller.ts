@@ -36,12 +36,15 @@ export class WebhookController {
     @Res() res: Response
   ) {
     try {
+      console.log("📥 Recebido POST /webhook com body:", JSON.stringify(body, null, 2));
       if (this.APP_SECRET) {
         if (!signature) {
+          console.warn("⚠️ Assinatura ausente!");
           throw new ForbiddenException("Signature missing");
         }
         const rawBody = req.rawBody;
         if (!rawBody) {
+          console.warn("⚠️ Raw body ausente!");
           throw new ForbiddenException("Raw body missing");
         }
 
@@ -50,34 +53,41 @@ export class WebhookController {
           .digest("hex");
 
         if (signature !== expectedSignature) {
+          console.warn("⚠️ Assinatura inválida! Recebida:", signature, "Esperada:", expectedSignature);
           throw new ForbiddenException("Invalid signature");
         }
       }
       const dataMsgs = ProcessRecivedData(body);
+      console.log("🔍 Mensagens processadas a partir do payload:", JSON.stringify(dataMsgs, null, 2));
 
       if (dataMsgs && dataMsgs.length > 0) {
         for (const dataMsg of dataMsgs) {
           // 1. Salva a mensagem bruta na Inbox do cliente no Redis
+          console.log(`💾 Salvando inbox:${dataMsg.customerId} no Redis...`);
           await redisClient.rpush(`inbox:${dataMsg.customerId}`, JSON.stringify(dataMsg));
           
           // 2. Avisa a fila que este cliente tem mensagens para processar
           // O jobId idêntico ao customerId impede jobs duplicados concorrentes na fila
           const safeJobId = `proc_${dataMsg.customerId.replace(/:/g, "_")}`;
+          console.log(`🚀 Adicionando job '${safeJobId}' na fila message-queue para customerId:`, dataMsg.customerId);
           await this.messageQueue.add("process-customer", { customerId: dataMsg.customerId }, {
             jobId: safeJobId, 
             attempts: 3,
             removeOnComplete: true,
+            removeOnFail: true,
             backoff: {
               type: "exponential",
               delay: 1000 
             }
           });
         }
+      } else {
+        console.log("ℹ️ Nenhuma mensagem válida retornada por ProcessRecivedData.");
       }
 
       return res.status(200).send("EVENT_RECEIVED");
     } catch (error) {
-      console.error("Falha ao adicionar job na fila:", error);
+      console.error("Falha ao processar webhook / adicionar job na fila:", error);
       return res.sendStatus(500);
     }
   }

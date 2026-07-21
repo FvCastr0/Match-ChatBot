@@ -35,6 +35,7 @@ export class WorkerProcessor extends WorkerHost {
 
     const { customerId } = job.data;
     const inboxKey = `inbox:${customerId}`;
+    console.log(`👷 [Worker] Iniciando processamento do customerId: ${customerId}`);
 
     // Loop para garantir que mensagens que cheguem enquanto estamos processando sejam lidas
     while (true) {
@@ -48,8 +49,10 @@ export class WorkerProcessor extends WorkerHost {
       `;
       
       const messagesJson: string[] = await redisClient.eval(luaScript, 1, inboxKey) as string[];
+      console.log(`👷 [Worker] Mensagens recuperadas do Redis para ${customerId}:`, messagesJson);
 
       if (!messagesJson || messagesJson.length === 0) {
+        console.log(`👷 [Worker] Nenhuma mensagem no Redis para ${customerId}. Finalizando loop.`);
         break; // Nenhuma mensagem nova, sai do loop e finaliza o job
       }
 
@@ -57,6 +60,7 @@ export class WorkerProcessor extends WorkerHost {
       let messages: MessageData[] = messagesJson.map((m) => JSON.parse(m));
       messages = messages.sort((a, b) => a.timeLastMsg - b.timeLastMsg);
 
+      console.log(`👷 [Worker] Processando ${messages.length} mensagens sequencialmente.`);
       // 4. Processa SEQUENCIALMENTE sem usar locks
       for (let i = 0; i < messages.length; i++) {
         const dataMsg = messages[i];
@@ -70,6 +74,7 @@ export class WorkerProcessor extends WorkerHost {
         }
 
         try {
+          console.log(`👷 [Worker] Processando mensagem id: ${dataMsg.messageId} de ${dataMsg.name} (${dataMsg.phone})`);
           if (dataMsg.downloadUrl && dataMsg.mediaId && process.env.ACCESS_TOKEN) {
             saveMedia(
               dataMsg.downloadUrl,
@@ -79,8 +84,10 @@ export class WorkerProcessor extends WorkerHost {
           }
 
           let customerData = await this.customerService.findCustomerData(dataMsg.customerId);
+          console.log(`👷 [Worker] Dados do cliente (Prisma):`, customerData);
 
           if (!customerData) {
+            console.log(`👷 [Worker] Cliente não existe no banco. Criando customerId: ${dataMsg.customerId}`);
             await this.customerService.createCustomer(
               dataMsg.customerId,
               dataMsg.name,
@@ -90,9 +97,12 @@ export class WorkerProcessor extends WorkerHost {
           }
 
           const hasActiveChat = await this.chatService.findAndIsActive(dataMsg.customerId);
+          console.log(`👷 [Worker] Chat ativo encontrado?`, hasActiveChat);
 
           if (!hasActiveChat) {
+            console.log(`👷 [Worker] Nenhum chat ativo. Criando chat para customerId: ${dataMsg.customerId}`);
             const chat = await this.chatService.create(dataMsg.customerId);
+            console.log(`👷 [Worker] Chat criado com id: ${chat.id}. Salvando mensagem do cliente...`);
             await this.messageService.createMessage(
               chat.id,
               dataMsg.msg,
@@ -101,6 +111,7 @@ export class WorkerProcessor extends WorkerHost {
               dataMsg.mediaUrl ?? ""
             );
 
+            console.log(`👷 [Worker] Enviando botões interativos para ${dataMsg.phone}...`);
             await sendInteractiveButtons(
               dataMsg.phone,
               `Seja bem vindo a rede Match! 🚀🔥\nPara te redirecionarmos melhor, qual é o motivo do contato?`,
@@ -110,6 +121,7 @@ export class WorkerProcessor extends WorkerHost {
                 { id: "problema", title: "Estou com problemas" }
               ]
             );
+            console.log(`👷 [Worker] Salvando mensagem BOT no banco...`);
             await this.messageService.createMessage(
               chat.id,
               "Mensagem redirecionamento empresa",
@@ -124,13 +136,16 @@ export class WorkerProcessor extends WorkerHost {
           if (customerData?.role === "CUSTOMER") {
             const chatData = await this.chatService.findData(hasActiveChat.id);
             const handler = this.stepFactory.getHandler(chatData?.currentStep);
+            console.log(`👷 [Worker] Roteando cliente para handler do step: ${chatData?.currentStep}`);
             await handler.handle(chatData, dataMsg);
           } else {
             const chatData = await this.chatService.findData(hasActiveChat.id);
             if (chatData?.currentStep !== Steps.attendant) {
+              console.log(`👷 [Worker] Atualizando step do chat para 'attendant'`);
               await this.chatService.updateStep(hasActiveChat.id, Steps.attendant);
             }
             const handler = this.stepFactory.getHandler(Steps.attendant);
+            console.log(`👷 [Worker] Roteando para handler do atendente`);
             await handler.handle(chatData, dataMsg);
           }
 
