@@ -67,11 +67,9 @@ export class WebhookController {
           await redisClient.rpush(`inbox:${dataMsg.customerId}`, JSON.stringify(dataMsg));
           
           // 2. Avisa a fila que este cliente tem mensagens para processar
-          // O jobId idêntico ao customerId impede jobs duplicados concorrentes na fila
-          const safeJobId = `proc_${dataMsg.customerId.replace(/:/g, "_")}`;
-          console.log(`🚀 Adicionando job '${safeJobId}' na fila message-queue para customerId:`, dataMsg.customerId);
+          // O Lock Distribuído por customerId no worker cuida da concorrência entre réplicas
+          console.log(`🚀 Adicionando job na fila message-queue para customerId:`, dataMsg.customerId);
           await this.messageQueue.add("process-customer", { customerId: dataMsg.customerId }, {
-            jobId: safeJobId, 
             attempts: 3,
             removeOnComplete: true,
             removeOnFail: true,

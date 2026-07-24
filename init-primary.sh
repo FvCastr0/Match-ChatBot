@@ -1,10 +1,22 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
-# Criar usuario de replicacao no Master
-psql -v ON_ERROR_STOP=1 --username "$POSTGRESQL_USERNAME" --dbname "$POSTGRESQL_DATABASE" <<-EOSQL
-    CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD 'replica_password';
+export PGPASSWORD="${POSTGRES_PASSWORD}"
+
+# Criar usuario de replicacao no Master usando o admin/superuser
+psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" <<-'EOSQL'
+DO $$
+BEGIN
+   IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'replicator') THEN
+      CREATE USER replicator WITH REPLICATION PASSWORD 'replica_password';
+   END IF;
+END
+$$;
 EOSQL
 
-# Adicionar regra no pg_hba.conf para permitir conexoes de replicacao
-echo "host replication replicator 0.0.0.0/0 md5" >> "$BITNAMI_ROOT_DIR/postgresql/conf/pg_hba.conf"
+HBA_CONF="$PGDATA/pg_hba.conf"
+RULE="host replication replicator 0.0.0.0/0 scram-sha-256"
+
+if ! grep -q "$RULE" "$HBA_CONF"; then
+    echo "$RULE" >> "$HBA_CONF"
+fi

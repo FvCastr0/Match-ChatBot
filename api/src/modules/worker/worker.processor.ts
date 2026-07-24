@@ -15,7 +15,7 @@ import { ChatGateway } from "../chat/chat.gateway";
 @Processor("message-queue", {
   concurrency: 50,
   limiter: {
-    max: 5,
+    max: 50,
     duration: 1000 // por 1 segundo
   }
 })
@@ -35,10 +35,20 @@ export class WorkerProcessor extends WorkerHost {
 
     const { customerId } = job.data;
     const inboxKey = `inbox:${customerId}`;
-    console.log(`👷 [Worker] Iniciando processamento do customerId: ${customerId}`);
+    const lockKey = `lock:customer:${customerId}`;
 
-    // Loop para garantir que mensagens que cheguem enquanto estamos processando sejam lidas
-    while (true) {
+    // Adquire Lock Distribuído por cliente no Redis (expira em 120s)
+    const acquiredLock = await redisClient.set(lockKey, "1", "EX", 120, "NX");
+    if (!acquiredLock) {
+      console.log(`🔒 [Worker] Lock já ativo para customerId: ${customerId}. Outro worker está processando.`);
+      return;
+    }
+
+    try {
+      console.log(`👷 [Worker] Iniciando processamento do customerId: ${customerId}`);
+
+      // Loop para garantir que mensagens que cheguem enquanto estamos processando sejam lidas
+      while (true) {
       // 1 e 2. Pega e remove todas as mensagens na Inbox deste cliente de forma atômica via script Lua
       const luaScript = `
         local messages = redis.call('lrange', KEYS[1], 0, -1)
@@ -164,6 +174,10 @@ export class WorkerProcessor extends WorkerHost {
           throw error; // Repassa erro para a fila tentar novamente com backoff
         }
       }
+    }
+    } finally {
+      await redisClient.del(lockKey);
+      console.log(`🔓 [Worker] Lock liberado para customerId: ${customerId}`);
     }
   }
 }

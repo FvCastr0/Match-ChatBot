@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 # Aguarda ate o container Master estar pronto e acessivel
