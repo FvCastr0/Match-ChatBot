@@ -72,5 +72,11 @@ export async function sendTemplateMessage(
       "Erro ao enviar template:",
       axiosError.response ? axiosError.response.data : axiosError.message
     );
+
+    const errorMessage =
+      axiosError.response?.data?.error?.message ||
+      "Falha ao enviar mensagem de template no WhatsApp.";
+
+    throw new Error(errorMessage);
   }
 }

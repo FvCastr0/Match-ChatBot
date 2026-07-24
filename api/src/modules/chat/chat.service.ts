@@ -232,19 +232,22 @@ export class ChatService extends ChatRepository {
         } else {
           await newChat(findCustomer.id, tx);
         }
+
+        // Garante que o template seja enviado com sucesso antes de efetivar o cadastro no BD
+        await sendTemplateMessage(customerPhone, "service_contact", customerName, order);
       });
 
       const chatPayload = await this.getChatPayload(chatId);
 
-      await sendTemplateMessage(customerPhone, "service_contact", customerName, order);
-
       this.chatGateway.emitNewTicket(chatPayload);
       return chatId;
-    } catch (e) {
+    } catch (e: any) {
       if (e instanceof HttpException) {
         throw e;
       }
-      throw new InternalServerErrorException("Não foi possível iniciar o chat.");
+      throw new BadRequestException(
+        e.message || "Erro ao enviar mensagem no WhatsApp. O chat não foi criado."
+      );
     }
   }
 }
