@@ -12,6 +12,8 @@ import { sendTextMessage } from "src/shared/utils/sendTextMessage";
 import { Steps } from "@prisma/client";
 import { ChatGateway } from "../chat/chat.gateway";
 
+import { RatingService } from "../rating/rating.service";
+
 @Processor("message-queue", {
   concurrency: 50,
   limiter: {
@@ -25,7 +27,8 @@ export class WorkerProcessor extends WorkerHost {
     private readonly chatService: ChatService,
     private readonly messageService: MessageService,
     private readonly stepFactory: StepHandlerFactory,
-    private readonly chatGateway: ChatGateway
+    private readonly chatGateway: ChatGateway,
+    private readonly ratingService: RatingService
   ) {
     super();
   }
@@ -110,6 +113,73 @@ export class WorkerProcessor extends WorkerHost {
           console.log(`👷 [Worker] Chat ativo encontrado?`, hasActiveChat);
 
           if (!hasActiveChat) {
+            // Verificar se há uma avaliação pendente para este cliente no Redis
+            const pendingRatingRaw = await redisClient.get(`pending_rating:${dataMsg.customerId}`);
+            if (pendingRatingRaw) {
+              try {
+                const pendingRating = JSON.parse(pendingRatingRaw);
+
+                if (pendingRating.step === "SCORE") {
+                  let score: number | null = null;
+                  const text = dataMsg.msg ? dataMsg.msg.trim() : "";
+
+                  if (text.startsWith("rating_")) {
+                    score = parseInt(text.replace("rating_", ""), 10);
+                  } else {
+                    const match = text.match(/\b([1-5])\b/);
+                    if (match) {
+                      score = parseInt(match[1], 10);
+                    }
+                  }
+
+                  if (score && score >= 1 && score <= 5) {
+                    console.log(`⭐ Salvando nota ${score} para chatId: ${pendingRating.chatId}`);
+                    await this.ratingService.createOrUpdateScore(pendingRating.chatId, score);
+
+                    await redisClient.set(
+                      `pending_rating:${dataMsg.customerId}`,
+                      JSON.stringify({ chatId: pendingRating.chatId, step: "COMMENT" }),
+                      "EX",
+                      3600
+                    );
+
+                    await sendTextMessage(
+                      dataMsg.phone,
+                      "Muito obrigado pela sua nota! 🌟\n\nSe desejar, deixe um comentário sobre a sua experiência respondendo a esta mensagem (ou digite 'Pular')."
+                    );
+                    continue;
+                  } else {
+                    console.log(`ℹ️ Cliente ${dataMsg.customerId} enviou mensagem que não é nota. Cancelando avaliação pendente e iniciando novo chat.`);
+                    await redisClient.del(`pending_rating:${dataMsg.customerId}`);
+                  }
+                } else if (pendingRating.step === "COMMENT") {
+                  const commentText = dataMsg.msg ? dataMsg.msg.trim() : "";
+
+                  if (commentText.toLowerCase() === "pular") {
+                    console.log(`ℹ️ Cliente ${dataMsg.customerId} optou por pular o comentário.`);
+                    await redisClient.del(`pending_rating:${dataMsg.customerId}`);
+                    await sendTextMessage(
+                      dataMsg.phone,
+                      "Obrigado! Sua avaliação foi registrada com sucesso. 🙏"
+                    );
+                    continue;
+                  } else {
+                    console.log(`💬 Salvando comentário da avaliação para chatId: ${pendingRating.chatId}`);
+                    await this.ratingService.updateComment(pendingRating.chatId, commentText);
+                    await redisClient.del(`pending_rating:${dataMsg.customerId}`);
+                    await sendTextMessage(
+                      dataMsg.phone,
+                      "Obrigado pelo seu comentário e por nos ajudar a melhorar! 🙏"
+                    );
+                    continue;
+                  }
+                }
+              } catch (err) {
+                console.error("Erro ao processar mensagem de avaliação:", err);
+                await redisClient.del(`pending_rating:${dataMsg.customerId}`);
+              }
+            }
+
             console.log(`👷 [Worker] Nenhum chat ativo. Criando chat para customerId: ${dataMsg.customerId}`);
             const chat = await this.chatService.create(dataMsg.customerId);
             console.log(`👷 [Worker] Chat criado com id: ${chat.id}. Salvando mensagem do cliente...`);

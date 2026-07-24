@@ -9,6 +9,7 @@ import { ChatModule } from "./modules/chat/chat.module";
 import { CustomerModule } from "./modules/customer/customer.module";
 import { MediaModule } from "./modules/media/media.module";
 import { MessageModule } from "./modules/message/message.module";
+import { RatingModule } from "./modules/rating/rating.module";
 import { UserModule } from "./modules/user/user.module";
 import { WebhookModule } from "./modules/webhook/webhook.module";
 import { WorkerModule } from "./modules/worker/worker.module";
@@ -45,7 +46,8 @@ import { PrismaModule } from "./shared/lib/prisma/prisma.module";
     QueueModule,
     AuthModule,
     ChatModule,
-    MediaModule
+    MediaModule,
+    RatingModule
   ]
 })
 export class AppModule {}

@@ -8,7 +8,8 @@ import { sendTemplateMessage } from "src/shared/utils/sendTemplateMessage";
 import { BusinessService } from "../business/business.service";
 import { CustomerService } from "../customer/customer.service";
 import { ChatGateway } from "./chat.gateway";
-import { sendTextMessage } from "src/shared/utils/sendTextMessage";
+import { sendInteractiveList } from "src/shared/utils/sendInteractiveList";
+import { redisClient } from "src/shared/utils/redis";
 
 @Injectable()
 export class ChatService extends ChatRepository {
@@ -20,6 +21,7 @@ export class ChatService extends ChatRepository {
   ) {
     super();
   }
+
   async findAndIsActive(customerId: string) {
     const chat = await this.prisma.chat.findFirst({
       where: { status: ChatStatus.open, customerId },
@@ -43,7 +45,8 @@ export class ChatService extends ChatRepository {
       include: {
         business: true,
         customer: true,
-        messages: true
+        messages: true,
+        rating: true
       }
     });
 
@@ -91,10 +94,84 @@ export class ChatService extends ChatRepository {
       });
   }
 
+  async sendRatingRequestIfEligible(chatId: string) {
+    try {
+      const chat = await this.prisma.chat.findUnique({
+        where: { id: chatId },
+        include: {
+          customer: true,
+          messages: {
+            where: { sender: "CUSTOMER" },
+            orderBy: { createdAt: "desc" },
+            take: 1
+          }
+        }
+      });
+
+      if (!chat || !chat.customer?.phone) return;
+
+      const lastCustomerMsg = chat.messages[0];
+      if (!lastCustomerMsg) return;
+
+      const now = Date.now();
+      const lastMsgTime = new Date(lastCustomerMsg.createdAt).getTime();
+      const twentyFourHoursMs = 24 * 60 * 60 * 1000;
+
+      if (now - lastMsgTime > twentyFourHoursMs) {
+        console.log(`⏳ Janela de 24h expirada para o cliente ${chat.customer.phone}. Avaliação não enviada.`);
+        return;
+      }
+
+      await sendInteractiveList(
+        chat.customer.phone,
+        "Como você avalia o atendimento recebido? Sua opinião é muito importante para nós! 🌟",
+        "Avaliar",
+        [
+          {
+            title: "Opções de Avaliação",
+            rows: [
+              { id: "rating_5", title: "⭐⭐⭐⭐⭐ 5 - Excelente", description: "Atendimento perfeito" },
+              { id: "rating_4", title: "⭐⭐⭐⭐ 4 - Bom", description: "Atendimento muito bom" },
+              { id: "rating_3", title: "⭐⭐⭐ 3 - Regular", description: "Atendimento razoável" },
+              { id: "rating_2", title: "⭐⭐ 2 - Ruim", description: "Deixou a desejar" },
+              { id: "rating_1", title: "⭐ 1 - Péssimo", description: "Atendimento insatisfeito" }
+            ]
+          }
+        ]
+      );
+
+      const redisPayload = JSON.stringify({
+        chatId: chat.id,
+        step: "SCORE"
+      });
+
+      await redisClient.set(
+        `pending_rating:${chat.customerId}`,
+        redisPayload,
+        "EX",
+        86400
+      );
+      console.log(`⭐ Pesquisa de avaliação disparada para customerId: ${chat.customerId}`);
+    } catch (error) {
+      console.error("Erro ao enviar pesquisa de avaliação:", error);
+    }
+  }
+
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async finishAllChats() {
+    const chatsToClose = await this.prisma.chat.findMany({
+      where: {
+        status: ChatStatus.open,
+        currentStep: {
+          not: "attendant"
+        }
+      },
+      select: { id: true }
+    });
+
     await this.prisma.chat.updateMany({
       where: {
+        status: ChatStatus.open,
         currentStep: {
           not: "attendant"
         }
@@ -104,6 +181,10 @@ export class ChatService extends ChatRepository {
         status: ChatStatus.unfinished
       }
     });
+
+    for (const chat of chatsToClose) {
+      await this.sendRatingRequestIfEligible(chat.id);
+    }
   }
 
   async finishChat(id: string): Promise<void> {
@@ -115,6 +196,8 @@ export class ChatService extends ChatRepository {
     this.chatGateway.server.emit("ticketClosed", {
       ticketId: updatedTicket.id
     });
+
+    await this.sendRatingRequestIfEligible(id);
   }
 
   async updateContactReason(chatId: string, contactReason: ContactReason) {
@@ -134,7 +217,8 @@ export class ChatService extends ChatRepository {
         include: {
           business: true,
           customer: true,
-          messages: true
+          messages: true,
+          rating: true
         }
       });
 
@@ -152,7 +236,8 @@ export class ChatService extends ChatRepository {
         business: true,
         messages: {
           orderBy: { createdAt: "asc" }
-        }
+        },
+        rating: true
       }
     });
   }

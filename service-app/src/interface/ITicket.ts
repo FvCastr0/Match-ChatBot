@@ -24,4 +24,10 @@ export interface ITicket {
     mediaUrl: string;
     type: string;
   }[];
+  rating?: {
+    id: string;
+    score: number;
+    comment?: string;
+    createdAt: Date;
+  };
 }

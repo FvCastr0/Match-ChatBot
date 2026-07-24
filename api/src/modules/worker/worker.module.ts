@@ -5,6 +5,7 @@ import { QueueModule } from "src/queue/queue.module";
 import { ChatModule } from "../chat/chat.module";
 import { CustomerModule } from "../customer/customer.module";
 import { MessageModule } from "../message/message.module";
+import { RatingModule } from "../rating/rating.module";
 import { WorkerProcessor } from "./worker.processor";
 
 @Module({
@@ -16,6 +17,7 @@ import { WorkerProcessor } from "./worker.processor";
     MessageModule,
     CustomerModule,
     ChatModule,
+    RatingModule,
     CacheModule.register()
   ],
   providers: [WorkerProcessor],

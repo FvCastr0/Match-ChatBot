@@ -41,6 +41,16 @@ model Chat {
   business      Business?      @relation(fields: [businessId], references: [id])
   customer      Customer       @relation(fields: [customerId], references: [id])
   messages      Message[]
+  rating        Rating?
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  chatId    String   @unique
+  score     Int
+  comment   String?
+  createdAt DateTime @default(now())
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
 }
 
 model Message {

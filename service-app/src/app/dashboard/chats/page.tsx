@@ -155,6 +155,7 @@ export default function ChatsPage() {
                     <TableHead className="font-bold text-slate-200">Empresa Solicitada</TableHead>
                     <TableHead className="font-bold text-slate-200">Motivo de Contato</TableHead>
                     <TableHead className="font-bold text-slate-200">Status</TableHead>
+                    <TableHead className="font-bold text-slate-200">Avaliação</TableHead>
                     <TableHead className="font-bold text-slate-200">Data de Criação</TableHead>
                     <TableHead className="text-right font-bold text-slate-200">Msgs</TableHead>
                   </TableRow>
@@ -202,6 +203,23 @@ export default function ChatsPage() {
                         <Badge className={getStatusColor(chat.status)}>
                           {translateStatus(chat.status)}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {chat.rating ? (
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-1 text-amber-400 font-bold text-sm">
+                              <span>{"⭐".repeat(chat.rating.score)}</span>
+                              <span className="text-slate-400 text-xs">({chat.rating.score}/5)</span>
+                            </div>
+                            {chat.rating.comment && (
+                              <span className="text-xs text-slate-300 italic max-w-[180px] truncate" title={chat.rating.comment}>
+                                "{chat.rating.comment}"
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-slate-500 italic text-xs">Sem avaliação</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-slate-300 text-sm">
                         {chat.createdAt &&

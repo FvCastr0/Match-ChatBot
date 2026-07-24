@@ -8,8 +8,8 @@ services:
       - ./api/.env
     environment:
       - REDIS_URL=redis://redis:6379
-      - DATABASE_URL=postgresql://docker:docker@postgres-chatbot-primary:5432/chatbot
-      - DATABASE_REPLICA_URL=postgresql://docker:docker@postgres-chatbot-replica:5432/chatbot
+      - DATABASE_URL=postgresql://postgres:postgrespassword@postgres-chatbot-primary:5432/chatbot
+      - DATABASE_REPLICA_URL=postgresql://postgres:postgrespassword@postgres-chatbot-primary:5432/chatbot
     volumes:
       - uploads_data:/app/uploads
     depends_on:
