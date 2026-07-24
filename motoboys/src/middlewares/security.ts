@@ -1,17 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
+import { env } from '../config/env';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
     username: string;
   };
-}
-
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'token_secreto_super_seguro_da_match';
-
-if (!process.env.ADMIN_TOKEN && process.env.NODE_ENV === 'production') {
-  console.warn('⚠️ ALERTA DE SEGURANÇA: ADMIN_TOKEN não está definido nas variáveis de ambiente em produção!');
 }
 
 /**
@@ -26,7 +21,13 @@ export function authenticateAdmin(req: AuthenticatedRequest, res: Response, next
 
   const token = authHeader.split(' ')[1];
 
-  if (token === ADMIN_TOKEN) {
+  const adminToken = env.ADMIN_TOKEN;
+
+  if (!adminToken) {
+    return res.status(500).json({ error: 'ADMIN_TOKEN não configurado no servidor.' });
+  }
+
+  if (token === adminToken) {
     req.user = { id: 'admin-fallback', username: 'admin' };
     return next();
   }

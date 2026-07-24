@@ -8,12 +8,14 @@ services:
       - ./api/.env
     environment:
       - REDIS_URL=redis://redis:6379
-      - DATABASE_URL=postgresql://docker:docker@postgres-chatbot:5432/chatbot
+      - DATABASE_URL=postgresql://docker:docker@postgres-chatbot-primary:5432/chatbot
+      - DATABASE_REPLICA_URL=postgresql://docker:docker@postgres-chatbot-replica:5432/chatbot
     volumes:
       - uploads_data:/app/uploads
     depends_on:
       - redis
-      - postgres-chatbot
+      - postgres-chatbot-primary
+      - postgres-chatbot-replica
     restart: unless-stopped
 
   frontend:
@@ -45,16 +47,36 @@ services:
       - "3002:80"
     restart: unless-stopped
 
-  postgres-chatbot:
+  postgres-chatbot-primary:
     image: bitnami/postgresql:latest
+    container_name: match_postgres_chatbot_primary
     environment:
       - POSTGRESQL_USERNAME=docker
       - POSTGRESQL_PASSWORD=docker
       - POSTGRESQL_DATABASE=chatbot
+      - POSTGRESQL_WAL_LEVEL=replica
+      - POSTGRESQL_MAX_WAL_SENDERS=10
     ports:
-      - "127.0.0.1:5434:5432" # Mapeia porta 5432 interna do container para a porta 5434 externa no localhost
+      - "127.0.0.1:5434:5432" # Master na porta 5434 externa
     volumes:
-      - polls_pg_data:/bitnami/postgresql
+      - polls_pg_primary_data:/bitnami/postgresql
+      - ./init-primary.sh:/docker-entrypoint-initdb.d/init-primary.sh
+    restart: unless-stopped
+
+  postgres-chatbot-replica:
+    image: postgres:15-alpine
+    container_name: match_postgres_chatbot_replica
+    environment:
+      - PGDATA=/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5435:5432" # Slave/Replica na porta 5435 externa
+    volumes:
+      - polls_pg_replica_data:/var/lib/postgresql/data
+      - ./entrypoint-replica.sh:/entrypoint-replica.sh
+    entrypoint: ["/bin/sh", "/entrypoint-replica.sh"]
+    command: ["postgres"]
+    depends_on:
+      - postgres-chatbot-primary
     restart: unless-stopped
 
   redis:
@@ -67,26 +89,14 @@ services:
       - polls_redis_data:/bitnami/redis/data
     restart: unless-stopped
 
-  postgres-motoboys:
-    image: bitnami/postgresql:latest
-    environment:
-      - POSTGRESQL_USERNAME=docker
-      - POSTGRESQL_PASSWORD=docker
-      - POSTGRESQL_DATABASE=motoboys
-    ports:
-      - "127.0.0.1:5433:5432" # Mapeia porta 5432 interna do container para a porta 5433 externa no localhost
-    volumes:
-      - motoboys_pg_data:/bitnami/postgresql
-    restart: unless-stopped
-
-  postgres-evolution:
+  postgres-general:
     image: postgres:15-alpine
     container_name: match_postgres
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgrespassword
-      POSTGRES_MULTIPLE_DATABASES: match_motoboys,evolution
+      POSTGRES_MULTIPLE_DATABASES: motoboys,evolution
     volumes:
       - postgres_data:/var/lib/postgresql/data
       # Script customizado para criar multiplas bases ao subir
@@ -115,7 +125,7 @@ services:
       - AUTHENTICATION_API_KEY=apitestkey
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
-      - DATABASE_CONNECTION_URI=postgresql://postgres:postgrespassword@postgres-evolution:5432/evolution?schema=public
+      - DATABASE_CONNECTION_URI=postgresql://postgres:postgrespassword@postgres-general:5432/evolution?schema=public
       - DATABASE_SAVE_DATA_INSTANCE=true
       - DATABASE_SAVE_DATA_NEW_MESSAGE=true
       - DATABASE_SAVE_DATA_WEBHOOK=true
@@ -131,7 +141,7 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - postgres-evolution
+      - postgres-general
       - redis
 
   motoboys:
@@ -144,19 +154,18 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379
       - EVOLUTION_API_URL=http://evolution:8080
-      - DATABASE_URL=postgresql://docker:docker@postgres-motoboys:5432/motoboys
+      - DATABASE_URL=postgresql://postgres:postgrespassword@postgres-general:5432/motoboys
       - PORT=3000
     depends_on:
       - redis
-      - postgres-motoboys
-      - postgres-evolution
+      - postgres-general
       - evolution
     restart: unless-stopped
 
 volumes:
-  polls_pg_data:
+  polls_pg_primary_data:
+  polls_pg_replica_data:
   postgres_data:
-  motoboys_pg_data:
   polls_redis_data:
   uploads_data:
   evolution_instances:

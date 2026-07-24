@@ -17,6 +17,46 @@ export class WhatsAppService {
   async connect() {
     console.log('🔄 Inicializando serviço do WhatsApp com a Evolution API...');
     setupWhatsAppWorker(this.sendDirectMessage.bind(this));
+    await this.configureWebhook();
+  }
+
+  /**
+   * Configura o webhook automaticamente na Evolution API apontando para o container motoboys
+   */
+  async configureWebhook() {
+    const url = `${this.evolutionUrl}/webhook/set/${this.instanceName}`;
+    const payload = {
+      webhook: {
+        enabled: true,
+        url: 'http://motoboys:3000/api/webhook/evolution',
+        byEvents: false,
+        base64: false,
+        events: [
+          'MESSAGES_UPSERT'
+        ]
+      }
+    };
+
+    try {
+      console.log(`🔄 Auto-configurando webhook na Evolution API (${url})...`);
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': this.evolutionKey,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.warn(`⚠️ Não foi possível configurar o webhook automaticamente: ${response.status} - ${errorText}`);
+      } else {
+        console.log('✅ Webhook da Evolution API configurado com sucesso para http://motoboys:3000/api/webhook/evolution');
+      }
+    } catch (err: any) {
+      console.error('⚠️ Falha ao tentar configurar webhook na Evolution API:', err.message);
+    }
   }
 
   /**

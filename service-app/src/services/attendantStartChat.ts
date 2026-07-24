@@ -1,6 +1,7 @@
 interface Response {
   id: string;
   ok: boolean;
+  message?: string;
 }
 
 export const startChat = async (
@@ -33,7 +34,7 @@ export const startChat = async (
     const ticket = await response.json();
     if (!response.ok) {
       console.error("Erro na resposta do servidor:", response);
-      return { ok: false, id: "" };
+      return { ok: false, id: "", message: ticket?.msg || ticket?.message || "Erro desconhecido" };
     }
 
     return {
@@ -42,6 +43,6 @@ export const startChat = async (
     };
   } catch (error) {
     console.error("Erro de conexão:", error);
-    return { ok: false, id: "" };
+    return { ok: false, id: "", message: "Erro de conexão com o servidor" };
   }
 };

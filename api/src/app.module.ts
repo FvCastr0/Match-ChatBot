@@ -39,7 +39,6 @@ import { PrismaModule } from "./shared/lib/prisma/prisma.module";
     WebhookModule,
     CustomerModule,
     PrismaModule,
-    CustomerModule,
     WorkerModule,
     UserModule,
     MessageModule,

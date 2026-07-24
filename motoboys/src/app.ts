@@ -7,13 +7,18 @@ import { AdminController } from './controllers/AdminController';
 import { ScheduleRuleController } from './controllers/ScheduleRuleController';
 import { EvolutionController } from './controllers/EvolutionController';
 import { authenticateAdmin, apiRateLimiter } from './middlewares/security';
+import { globalErrorHandler } from './middlewares/errorHandler';
+import { validateEnv, env } from './config/env';
+
+// Fail-Fast: Valida variáveis de ambiente obrigatórias no boot
+validateEnv();
 
 const app = express();
 
 // OWASP A05: Security Misconfiguration - Proteção de cabeçalhos HTTP via Helmet
 app.use(helmet());
 
-// Configuração do CORS restrito ao domínio da aplicação (OWASP A05)
+// Configuração do CORS
 app.use(
   cors({
     origin: '*',
@@ -30,38 +35,36 @@ const adminController = new AdminController();
 const ruleController = new ScheduleRuleController();
 const evolutionController = new EvolutionController();
 
-
-
 // Inicializa a conexão do bot de WhatsApp (Queue Worker) e depois as cronjobs
-wpService.connect().then(() => {
-  const cronService = new CronService(wpService);
-  cronService.init();
-}).catch((err) => {
-  console.error('Falha crítica na conexão do WhatsApp:', err);
-});
-
-
+wpService
+  .connect()
+  .then(() => {
+    const cronService = new CronService(wpService);
+    cronService.init();
+  })
+  .catch((err) => {
+    console.error('Falha crítica na conexão do WhatsApp:', err);
+  });
 
 // 📌 Webhook público recebido da Evolution API
-app.post('/api/webhook/evolution', async (req, res) => {
+app.post('/api/webhook/evolution', async (req, res, next) => {
   const evolutionWebhookToken = req.headers['webhook-signature'] || req.headers['apikey'];
 
   // OWASP A01: Valida se o webhook partiu legitimamente da nossa instância Evolution
-  if (evolutionWebhookToken !== process.env.EVOLUTION_API_KEY) {
-    console.warn('⚠️ Token do webhook inválido:', evolutionWebhookToken, '- Ignorando erro para pegar o ID do grupo.');
-    // return res.status(403).json({ error: 'Assinatura do webhook inválida.' });
+  if (env.EVOLUTION_API_KEY && evolutionWebhookToken !== env.EVOLUTION_API_KEY) {
+    console.warn('⚠️ Token do webhook inválido:', evolutionWebhookToken);
+    return res.status(403).json({ error: 'Assinatura do webhook inválida.' });
   }
 
   try {
     await wpService.handleWebhook(req.body);
     return res.status(200).send('Webhook processado com sucesso');
-  } catch (err: any) {
-    console.error('Erro ao tratar webhook:', err.message);
-    return res.status(500).json({ error: err.message });
+  } catch (err) {
+    return next(err);
   }
 });
 
-// 🔒 Rotas Administrativas de Escala e Métricas (OWASP A01: Acesso protegido por Bearer Token)
+// 🔒 Rotas Administrativas de Escala e Métricas
 app.get('/api/admin/today-scale', authenticateAdmin, adminController.getTodayScale.bind(adminController));
 app.get('/api/admin/motoboys-metrics', authenticateAdmin, adminController.getMotoboysMetrics.bind(adminController));
 app.get('/api/admin/audit-group', authenticateAdmin, adminController.auditGroupParticipants.bind(adminController));
@@ -78,7 +81,7 @@ app.get('/api/admin/evolution/connect', authenticateAdmin, evolutionController.c
 app.delete('/api/admin/evolution/logout', authenticateAdmin, evolutionController.logout.bind(evolutionController));
 
 // 🔒 Rota manual para forçar/configurar escala do dia
-app.post('/api/admin/open-scale', authenticateAdmin, async (req, res) => {
+app.post('/api/admin/open-scale', authenticateAdmin, async (req, res, next) => {
   const { vagasTotais } = req.body;
 
   if (vagasTotais !== undefined && typeof vagasTotais !== 'number') {
@@ -88,25 +91,28 @@ app.post('/api/admin/open-scale', authenticateAdmin, async (req, res) => {
   try {
     await wpService.openDailySchedule(vagasTotais);
     return res.json({ message: 'Escala aberta com sucesso no banco e disparada no grupo!' });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+  } catch (err) {
+    return next(err);
   }
 });
 
 // 🔒 Rota manual para fechar a escala do dia
-app.post('/api/admin/close-scale', authenticateAdmin, async (req, res) => {
+app.post('/api/admin/close-scale', authenticateAdmin, async (req, res, next) => {
   try {
     const closed = await wpService.closeDailySchedule();
     if (!closed) {
       return res.status(404).json({ error: 'Nenhuma escala ativa aberta para finalizar.' });
     }
     return res.json({ message: 'Escala finalizada com sucesso no banco e notificada no grupo!' });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+  } catch (err) {
+    return next(err);
   }
 });
 
-const PORT = process.env.PORT || 3000;
+// Middleware Global de Tratamento de Erros (Must be last)
+app.use(globalErrorHandler);
+
+const PORT = env.PORT;
 app.listen(PORT, () => {
   console.log(`🚀 API de Gestão Segura da Rede Match rodando na porta ${PORT}`);
 });

@@ -6,6 +6,30 @@ import fihass from "./assets/fihass.png";
 import match from "./assets/match.png";
 import smatch from "./assets/smatch.png";
 
+const BRANDS = [
+  {
+    id: "smatch",
+    img: smatch,
+    link: "https://smatchburger.com.br/smatchburger/smatchburger?dd=menu",
+    alt: "Smatch Burger Logo",
+    name: "Smatch Burger",
+  },
+  {
+    id: "match",
+    img: match,
+    link: "https://matchpizza.app.br/matchpizza/matchpizza?dd=from-brand&dd=menu",
+    alt: "Match Pizza Logo",
+    name: "Match Pizza",
+  },
+  {
+    id: "fihass",
+    img: fihass,
+    link: "https://deliverydireto.com.br/fihass/fihass?dd=from-brand&dd=menu",
+    alt: "Fihass Logo",
+    name: "Fihass",
+  },
+];
+
 function App() {
   const path = window.location.pathname;
 
@@ -25,7 +49,7 @@ function App() {
       gsap.from(containerRef.current, {
         opacity: 0,
         duration: 1,
-        ease: "power2.out"
+        ease: "power2.out",
       });
 
       gsap.from(".texts > *", {
@@ -33,87 +57,74 @@ function App() {
         opacity: 0,
         duration: 0.8,
         ease: "power3.out",
-        stagger: 0.2
+        stagger: 0.2,
       });
 
-      gsap.from(".images > div", {
+      gsap.from(".images > a", {
         y: 60,
         opacity: 0,
         scale: 0.9,
         duration: 0.8,
         ease: "back.out(1.4)",
         stagger: 0.15,
-        delay: 0.4
+        delay: 0.4,
       });
     }, containerRef);
 
     return () => ctx.revert();
   }, []);
 
-  const handleMouseEnter = el => {
+  const handleMouseEnter = (el) => {
     gsap.to(el, {
       scale: 1.05,
       y: -8,
       boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
       duration: 0.3,
-      ease: "power2.out"
+      ease: "power2.out",
     });
   };
 
-  const handleMouseLeave = el => {
+  const handleMouseLeave = (el) => {
     gsap.to(el, {
       scale: 1,
       y: 0,
       boxShadow: "0 10px 20px rgba(0,0,0,0.1)",
       duration: 0.3,
-      ease: "power2.out"
+      ease: "power2.out",
     });
   };
 
   return (
     <main className="container" ref={containerRef}>
-      <div className="texts" ref={textsRef}>
+      <header className="texts" ref={textsRef}>
         <h1>O match perfeito entre fome e sabor começa agora</h1>
         <h2>
           <strong>Um clique</strong> te separa da melhor rede delivery de Juiz
           de Fora 🔥
         </h2>
-        <h3>Escolha sua marca e peça sem medo 🚀</h3>
-      </div>
+        <p className="subtitle">Escolha sua marca e peça sem medo 🚀</p>
+      </header>
 
-      <div className="brands" ref={brandsRef}>
-        <h1>Nossas marcas</h1>
+      <section className="brands" ref={brandsRef} aria-label="Nossas marcas">
+        <h2>Nossas marcas</h2>
 
         <div className="images">
-          {[
-            {
-              img: smatch,
-              link: "https://smatchburger.com.br/smatchburger/smatchburger?dd=menu",
-              alt: "Smatch Burger Logo"
-            },
-            {
-              img: match,
-              link: "https://matchpizza.app.br/matchpizza/matchpizza?dd=from-brand&dd=menu",
-              alt: "Match Pizza Logo"
-            },
-            {
-              img: fihass,
-              link: "https://deliverydireto.com.br/fihass/fihass?dd=from-brand&dd=menu",
-              alt: "Fihass Logo"
-            }
-          ].map((brand, i) => (
-            <div
-              key={i}
-              onClick={() => (window.location.href = brand.link)}
-              onMouseEnter={e => handleMouseEnter(e.currentTarget)}
-              onMouseLeave={e => handleMouseLeave(e.currentTarget)}
+          {BRANDS.map((brand) => (
+            <a
+              key={brand.id}
+              href={brand.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="brand-card"
+              onMouseEnter={(e) => handleMouseEnter(e.currentTarget)}
+              onMouseLeave={(e) => handleMouseLeave(e.currentTarget)}
             >
               <img src={brand.img} alt={brand.alt} />
-              <button>Acessar cardápio</button>
-            </div>
+              <span className="button-label">Acessar cardápio</span>
+            </a>
           ))}
         </div>
-      </div>
+      </section>
     </main>
   );
 }

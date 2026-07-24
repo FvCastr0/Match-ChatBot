@@ -115,7 +115,7 @@ export function DialogNewChat({ onChatCreated, token }: DialogNewChatProps) {
           order: "",
           contactReason: ""
         });
-        toast.error("Você já tem um chat aberto com esse usuário");
+        toast.error(response.message || "Você já tem um chat aberto com esse usuário");
       }
     } catch (error) {
       toast.error("Erro de conexão");

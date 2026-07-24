@@ -1,5 +1,5 @@
-const MOTOBOYS_API_URL = "http://localhost:3003";
-const MOTOBOYS_ADMIN_TOKEN = "token_secreto_super_seguro_da_match";
+const MOTOBOYS_API_URL = process.env.NEXT_PUBLIC_MOTOBOYS_API_URL || process.env.INTERNAL_MOTOBOYS_URL || "http://localhost:3003";
+const MOTOBOYS_ADMIN_TOKEN = process.env.NEXT_PUBLIC_MOTOBOYS_ADMIN_TOKEN || process.env.MOTOBOYS_ADMIN_TOKEN || "";
 
 export interface TodayScale {
   id: string;
